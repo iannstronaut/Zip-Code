@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.log
+.env
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+SRS.md
+PROMPT.md
+test-file.txt
+*.test.js
+.zipcode-conversations/
+zipcode-export-*.md
+.zipcode-config.json
