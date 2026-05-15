@@ -2,9 +2,14 @@
 
 import type { ToolDefinition, ToolResult } from './types';
 import { existsSync } from 'fs';
-import { readdir, stat, readFile as fsReadFile, writeFile as fsWriteFile } from 'fs/promises';
-import { join, resolve } from 'path';
-import enquirer from 'enquirer';
+import {
+  readdir,
+  stat,
+  readFile as fsReadFile,
+  writeFile as fsWriteFile,
+  mkdir,
+} from 'fs/promises';
+import { join, resolve, dirname, relative, sep } from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -16,13 +21,13 @@ export const TOOLS: ToolDefinition[] = [
     type: 'function',
     function: {
       name: 'read_file',
-      description: 'Read the contents of a file from the filesystem',
+      description: 'Read the contents of a file from the filesystem.',
       parameters: {
         type: 'object',
         properties: {
           path: {
             type: 'string',
-            description: 'The path to the file to read (relative or absolute)',
+            description: 'Path to the file to read (relative or absolute).',
           },
         },
         required: ['path'],
@@ -33,17 +38,18 @@ export const TOOLS: ToolDefinition[] = [
     type: 'function',
     function: {
       name: 'write_file',
-      description: 'Write content to a file (creates new file or overwrites existing)',
+      description:
+        'Write content to a file. Creates parent directories if needed. Overwrites existing files.',
       parameters: {
         type: 'object',
         properties: {
           path: {
             type: 'string',
-            description: 'The path to the file to write',
+            description: 'Path to the file to write.',
           },
           content: {
             type: 'string',
-            description: 'The content to write to the file',
+            description: 'Content to write to the file.',
           },
         },
         required: ['path', 'content'],
@@ -54,13 +60,14 @@ export const TOOLS: ToolDefinition[] = [
     type: 'function',
     function: {
       name: 'list_dir',
-      description: 'List contents of a directory',
+      description: 'List the contents of a directory.',
       parameters: {
         type: 'object',
         properties: {
           path: {
             type: 'string',
-            description: 'The directory path to list (defaults to current directory)',
+            description:
+              'Directory path to list (defaults to current working directory).',
           },
         },
         required: [],
@@ -71,13 +78,14 @@ export const TOOLS: ToolDefinition[] = [
     type: 'function',
     function: {
       name: 'execute_bash',
-      description: 'Execute a bash/shell command. Use with caution.',
+      description:
+        'Execute a shell command. Has a 30s timeout. Use carefully — destructive commands should be confirmed first.',
       parameters: {
         type: 'object',
         properties: {
           command: {
             type: 'string',
-            description: 'The shell command to execute',
+            description: 'Shell command to execute.',
           },
         },
         required: ['command'],
@@ -87,14 +95,63 @@ export const TOOLS: ToolDefinition[] = [
   {
     type: 'function',
     function: {
+      name: 'grep',
+      description:
+        'Search file contents using a regex pattern. Recursively scans the given path (defaults to CWD).',
+      parameters: {
+        type: 'object',
+        properties: {
+          pattern: {
+            type: 'string',
+            description: 'Regex pattern to search for.',
+          },
+          path: {
+            type: 'string',
+            description: 'Directory or file to search (defaults to CWD).',
+          },
+          maxResults: {
+            type: 'number',
+            description: 'Maximum number of matching lines to return (default 200).',
+          },
+        },
+        required: ['pattern'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'glob',
+      description:
+        'Find files matching a glob-like pattern (supports *, **, ?). Returns matching paths.',
+      parameters: {
+        type: 'object',
+        properties: {
+          pattern: {
+            type: 'string',
+            description: 'Glob pattern, e.g. "src/**/*.ts".',
+          },
+          path: {
+            type: 'string',
+            description: 'Root directory to search from (defaults to CWD).',
+          },
+        },
+        required: ['pattern'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'ask_user',
-      description: 'Ask the user a question and wait for their response',
+      description:
+        'Ask the user for input or confirmation. Use this for destructive or ambiguous operations.',
       parameters: {
         type: 'object',
         properties: {
           question: {
             type: 'string',
-            description: 'The question to ask the user',
+            description: 'Question to present to the user.',
           },
         },
         required: ['question'],
@@ -103,49 +160,45 @@ export const TOOLS: ToolDefinition[] = [
   },
 ];
 
-// Tool implementations
+// ──────────── implementations ────────────
+
 export async function readFile(path: string): Promise<ToolResult> {
   try {
     const resolvedPath = resolve(path);
-    
     if (!existsSync(resolvedPath)) {
-      return {
-        success: false,
-        output: '',
-        error: `File not found: ${path}`,
-      };
+      return { success: false, output: '', error: `File not found: ${path}` };
     }
-
     const content = await fsReadFile(resolvedPath, 'utf-8');
-
-    return {
-      success: true,
-      output: content,
-    };
-  } catch (error) {
+    return { success: true, output: content };
+  } catch (error: any) {
     return {
       success: false,
       output: '',
-      error: `Error reading file: ${error}`,
+      error: `Error reading file: ${error?.message || error}`,
     };
   }
 }
 
-export async function writeFile(path: string, content: string): Promise<ToolResult> {
+export async function writeFile(
+  path: string,
+  content: string
+): Promise<ToolResult> {
   try {
     const resolvedPath = resolve(path);
-    
+    const dir = dirname(resolvedPath);
+    if (!existsSync(dir)) {
+      await mkdir(dir, { recursive: true });
+    }
     await fsWriteFile(resolvedPath, content, 'utf-8');
-
     return {
       success: true,
-      output: `File written successfully: ${path}`,
+      output: `File written: ${path} (${Buffer.byteLength(content, 'utf-8')} bytes)`,
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       success: false,
       output: '',
-      error: `Error writing file: ${error}`,
+      error: `Error writing file: ${error?.message || error}`,
     };
   }
 }
@@ -153,7 +206,6 @@ export async function writeFile(path: string, content: string): Promise<ToolResu
 export async function listDir(path: string = '.'): Promise<ToolResult> {
   try {
     const resolvedPath = resolve(path);
-
     if (!existsSync(resolvedPath)) {
       return {
         success: false,
@@ -166,29 +218,32 @@ export async function listDir(path: string = '.'): Promise<ToolResult> {
     const details = await Promise.all(
       entries.map(async (entry) => {
         const fullPath = join(resolvedPath, entry);
-        const stats = await stat(fullPath);
-        const type = stats.isDirectory() ? 'dir' : 'file';
-        const size = stats.isFile() ? stats.size : 0;
-        return { name: entry, type, size };
+        try {
+          const stats = await stat(fullPath);
+          const type = stats.isDirectory() ? 'dir' : 'file';
+          const size = stats.isFile() ? stats.size : 0;
+          return { name: entry, type, size };
+        } catch {
+          return { name: entry, type: 'file', size: 0 };
+        }
       })
     );
 
     const output = details
       .map((d) => {
-        const sizeStr = d.type === 'file' ? ` (${d.size} bytes)` : '';
-        return `${d.type === 'dir' ? '📁' : '📄'} ${d.name}${sizeStr}`;
+        const tag = d.type === 'dir' ? '[DIR] ' : '[FILE]';
+        const sizeStr =
+          d.type === 'file' ? `  ${d.size.toString().padStart(8)} bytes` : '';
+        return `${tag} ${d.name}${sizeStr}`;
       })
       .join('\n');
 
-    return {
-      success: true,
-      output: output || 'Empty directory',
-    };
-  } catch (error) {
+    return { success: true, output: output || 'Empty directory' };
+  } catch (error: any) {
     return {
       success: false,
       output: '',
-      error: `Error listing directory: ${error}`,
+      error: `Error listing directory: ${error?.message || error}`,
     };
   }
 }
@@ -196,46 +251,222 @@ export async function listDir(path: string = '.'): Promise<ToolResult> {
 export async function executeBash(command: string): Promise<ToolResult> {
   try {
     const { stdout, stderr } = await execAsync(command, {
-      timeout: 30000, // 30 second timeout
-      maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+      timeout: 30000,
+      maxBuffer: 1024 * 1024 * 10,
     });
-
+    const output = (stdout || '') + (stderr ? `\n[stderr]\n${stderr}` : '');
     return {
       success: true,
-      output: stdout || 'Command executed successfully (no output)',
+      output: output.trim() || 'Command executed (no output)',
     };
   } catch (error: any) {
     return {
       success: false,
-      output: error.stdout || '',
-      error: error.stderr || error.message || 'Command execution failed',
+      output: error?.stdout || '',
+      error: error?.stderr || error?.message || 'Command execution failed',
     };
   }
 }
 
-export async function askUser(question: string): Promise<ToolResult> {
+const IGNORED_DIRS = new Set([
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  '.next',
+  '.cache',
+  '.zipcode',
+]);
+
+async function walk(
+  dir: string,
+  out: string[],
+  cap = 5000
+): Promise<void> {
+  if (out.length >= cap) return;
+  let entries: string[];
   try {
-    const response: any = await enquirer.prompt({
-      type: 'input',
-      name: 'answer',
-      message: question,
-    });
+    entries = await readdir(dir);
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
+    if (out.length >= cap) return;
+    if (IGNORED_DIRS.has(entry)) continue;
+    const full = join(dir, entry);
+    let s;
+    try {
+      s = await stat(full);
+    } catch {
+      continue;
+    }
+    if (s.isDirectory()) {
+      await walk(full, out, cap);
+    } else if (s.isFile()) {
+      out.push(full);
+    }
+  }
+}
+
+function globToRegex(pattern: string): RegExp {
+  // Normalise separators to forward slash for tokenisation.
+  const norm = pattern.replace(/\\/g, '/');
+
+  // Tokenise glob metacharacters into placeholders so we can safely escape
+  // regex specials afterwards.
+  const SGS = '\u0001'; // **/
+  const GS = '\u0002'; // **
+  const ST = '\u0003'; // *
+  const QM = '\u0004'; // ?
+  const SL = '\u0005'; // /
+
+  let s = norm
+    .replace(/\*\*\//g, SGS)
+    .replace(/\*\*/g, GS)
+    .replace(/\*/g, ST)
+    .replace(/\?/g, QM)
+    .replace(/\//g, SL);
+
+  // Escape regex specials in literal portions (placeholders survive).
+  s = s.replace(/[.+^$(){}|[\]\\]/g, '\\$&');
+
+  // Path separator and "non-separator" classes — allow both / and \ to match
+  // either path style on Windows or POSIX.
+  const SEP = '[\\\\/]';
+  const NONSEP = '[^\\\\/]';
+
+  s = s
+    .split(SGS)
+    .join('(?:' + NONSEP + '*' + SEP + ')*')
+    .split(GS)
+    .join('.*')
+    .split(ST)
+    .join(NONSEP + '*')
+    .split(QM)
+    .join(NONSEP)
+    .split(SL)
+    .join(SEP);
+
+  return new RegExp('^' + s + '$');
+}
+
+export async function globSearch(
+  pattern: string,
+  path: string = '.'
+): Promise<ToolResult> {
+  try {
+    const root = resolve(path);
+    if (!existsSync(root)) {
+      return { success: false, output: '', error: `Path not found: ${path}` };
+    }
+    const all: string[] = [];
+    await walk(root, all);
+    const re = globToRegex(pattern);
+    const matched = all
+      .map((p) => relative(root, p).split(sep).join('/'))
+      .filter((p) => re.test(p))
+      .slice(0, 500);
 
     return {
       success: true,
-      output: response.answer,
+      output: matched.length
+        ? matched.join('\n') + `\n\n${matched.length} match(es)`
+        : 'No matches',
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       success: false,
       output: '',
-      error: 'User cancelled or error occurred',
+      error: `Glob error: ${error?.message || error}`,
     };
   }
 }
 
+export async function grepSearch(
+  pattern: string,
+  path: string = '.',
+  maxResults = 200
+): Promise<ToolResult> {
+  try {
+    const root = resolve(path);
+    if (!existsSync(root)) {
+      return { success: false, output: '', error: `Path not found: ${path}` };
+    }
+    let regex: RegExp;
+    try {
+      regex = new RegExp(pattern);
+    } catch {
+      return {
+        success: false,
+        output: '',
+        error: `Invalid regex: ${pattern}`,
+      };
+    }
+
+    const files: string[] = [];
+    const s = await stat(root);
+    if (s.isFile()) {
+      files.push(root);
+    } else {
+      await walk(root, files);
+    }
+
+    const matches: string[] = [];
+    for (const f of files) {
+      if (matches.length >= maxResults) break;
+      let content: string;
+      try {
+        content = await fsReadFile(f, 'utf-8');
+      } catch {
+        continue;
+      }
+      const lines = content.split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        if (regex.test(lines[i])) {
+          const rel = relative(root, f).split(sep).join('/') || f;
+          matches.push(`${rel}:${i + 1}: ${lines[i].slice(0, 300)}`);
+          if (matches.length >= maxResults) break;
+        }
+      }
+    }
+
+    return {
+      success: true,
+      output: matches.length
+        ? matches.join('\n') + `\n\n${matches.length} match(es)`
+        : 'No matches',
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      output: '',
+      error: `Grep error: ${error?.message || error}`,
+    };
+  }
+}
+
+// ask_user is special — it must be handled by the UI layer.
+// The default fallback simply returns an instruction for the model.
+export async function askUser(question: string): Promise<ToolResult> {
+  return {
+    success: true,
+    output: `[ask_user not handled in this context] Question: ${question}`,
+  };
+}
+
+export type AskUserHandler = (question: string) => Promise<string>;
+
+let askUserHandler: AskUserHandler | null = null;
+
+export function setAskUserHandler(handler: AskUserHandler | null): void {
+  askUserHandler = handler;
+}
+
 // Execute tool by name
-export async function executeTool(name: string, args: any): Promise<ToolResult> {
+export async function executeTool(
+  name: string,
+  args: any
+): Promise<ToolResult> {
   switch (name) {
     case 'read_file':
       return readFile(args.path);
@@ -245,8 +476,25 @@ export async function executeTool(name: string, args: any): Promise<ToolResult> 
       return listDir(args.path);
     case 'execute_bash':
       return executeBash(args.command);
-    case 'ask_user':
+    case 'grep':
+      return grepSearch(args.pattern, args.path, args.maxResults);
+    case 'glob':
+      return globSearch(args.pattern, args.path);
+    case 'ask_user': {
+      if (askUserHandler) {
+        try {
+          const answer = await askUserHandler(args.question);
+          return { success: true, output: answer };
+        } catch (e: any) {
+          return {
+            success: false,
+            output: '',
+            error: `ask_user cancelled: ${e?.message || e}`,
+          };
+        }
+      }
       return askUser(args.question);
+    }
     default:
       return {
         success: false,

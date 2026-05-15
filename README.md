@@ -1,438 +1,124 @@
-# ZIP CODE - AI CLI Agent
-
-<div align="center">
+# ZIP CODE - AI TUI Agent
 
 ```
- ┏━━━━┓━━┓━━━┓┃┃┃━━━┓━━━┓━━━┓━━━┓
- ┗━━┓┃┃┫┣┛┏━┓┃┃┃┃┏━┓┃┏━┓┃┓┏┓┃┏━━┛
- ┃┃┏┛┏┛┃┃┃┗━┛┃┃┃┃┃┃┗┛┃┃┃┃┃┃┃┃┗━━┓
- ┃┏┛┏┛┃┃┃┃┏━━┛┃┃┃┃┃┏┓┃┃┃┃┃┃┃┃┏━━┛
- ┏┛┃┗━┓┫┣┓┃┃┃┃┃┃┃┗━┛┃┗━┛┃┛┗┛┃┗━━┓
- ┗━━━━┛━━┛┛┃┃┃┃┃┃━━━┛━━━┛━━━┛━━━┛
+ ███████╗██╗██████╗      ██████╗ ██████╗ ██████╗ ███████╗
+ ╚══███╔╝██║██╔══██╗    ██╔════╝██╔═══██╗██╔══██╗██╔════╝
+   ███╔╝ ██║██████╔╝    ██║     ██║   ██║██║  ██║█████╗
+  ███╔╝  ██║██╔═══╝     ██║     ██║   ██║██║  ██║██╔══╝
+ ███████╗██║██║         ╚██████╗╚██████╔╝██████╔╝███████╗
+ ╚══════╝╚═╝╚═╝          ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
 ```
 
-**AI Coding Assistant for the Command Line**
+**A modern, Ink-powered Terminal UI agent for coding assistance.**
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/yourusername/zipcode)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
-[![Node](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-
-</div>
 
 ---
 
-## 🚀 Features
+## What's new in v2.0
 
-- 🤖 **Autonomous AI Agent** - ReAct pattern for intelligent reasoning and acting
-- 🎨 **Beautiful Terminal UI** - Gradient ASCII art with custom chat borders
-- 🔧 **Interactive Provider Management** - Switch between 0penAI and custom providers seamlessly
-- 📁 **Powerful Tool System** - 5 built-in tools for file operations and shell commands
-- 💬 **Real-time Streaming** - Token-by-token response streaming
-- 📝 **Markdown Rendering** - Syntax highlighting for code blocks
-- 💾 **Conversation Persistence** - Save, load, and export conversations
-- 🎯 **Multiple Providers** - Support for 0penAI, custom APIs, or tools-only mode
-- ⚡ **Fast & Lightweight** - Startup < 500ms, Memory < 100MB
+ZIP CODE has been rewritten as a modern TUI inspired by `opencode`:
 
-## 📦 Installation
+- 🎨 **Ink + React TUI** with persistent header, scrolling message view, status bar, and modal panels
+- ⚙️ **Settings panel (Ctrl+S)** — switch provider, edit API key, fetch models, tweak temperature/tokens, all without restart
+- 💾 **SQLite-backed sessions** at `~/.zipcode/zipcode.db` — every message and tool call is persisted automatically
+- 🔧 **Tool calling** — `read_file`, `write_file`, `list_dir`, `execute_bash`, `grep`, `glob`, `ask_user`
+- ⚡ **Event-driven agent** — streaming tokens, parallel tool execution, cancellable in-flight requests
+- 🗂 **Session browser (Ctrl+L)** — list, switch, and create sessions with arrow keys
+- ⌨️ **Keybinds**: `Ctrl+S` settings · `Ctrl+L` sessions · `Ctrl+N` new session · `Esc` cancel · `Ctrl+C` quit
 
-### Prerequisites
-- Node.js 18 or higher
-- npm or yarn
-
-### Quick Install
+## Install
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/zipcode.git
-cd zipcode
-
-# Install dependencies
 npm install
-
-# Build the project
 npm run build
-
-# Link globally (optional)
-npm link
+npm link            # optional, exposes `zipcode` globally
 ```
 
-## ⚙️ Configuration
-
-### Option 1: 0penAI (Default)
+## Run
 
 ```bash
-export OPENAI_API_KEY="sk-your-api-key-here"
-export ZIPCODE_MODEL="gpt-4"  # optional
+npm run dev         # tsx, hot start
+# or
+zipcode             # if linked globally
+# or
+node dist/index.js
 ```
 
-### Option 2: Custom Provider (0penAI SDK Compatible)
+## Configuration
 
-```bash
-export ZIPCODE_PROVIDER=custom
-export ZIPCODE_API_KEY="your-key"
-export ZIPCODE_BASE_URL="http://localhost:1234/v1"
-export ZIPCODE_MODEL="your-model"
-```
+Two paths — both work:
 
-### Option 3: Tools-Only Mode (No API Key)
+1. **In-app**: press **Ctrl+S** and fill in the form. Press **f** in the Model field to fetch the model list from the provider. Save with **Ctrl+S** again. The values are stored in SQLite (`~/.zipcode/zipcode.db`).
+2. **Environment variables** (used as fallback when nothing is saved):
+   - `ZIPCODE_PROVIDER` — `openai` or `custom`
+   - `OPENAI_API_KEY` / `ZIPCODE_API_KEY`
+   - `ZIPCODE_BASE_URL` — for custom OpenAI-compatible endpoints (Ollama, LM Studio, gateways…)
+   - `ZIPCODE_MODEL`, `ZIPCODE_MAX_TOKENS`, `ZIPCODE_TEMPERATURE`
 
-```bash
-# Just run without setting any API keys
-# Perfect for file operations and shell commands
-```
+## Tools
 
-### Environment Variables
+| Tool           | Description                                       |
+| -------------- | ------------------------------------------------- |
+| `read_file`    | Read a file's contents                            |
+| `write_file`   | Write a file (creates parent directories)         |
+| `list_dir`     | List a directory                                  |
+| `execute_bash` | Run a shell command (30s timeout)                 |
+| `grep`         | Recursively search file contents with a regex     |
+| `glob`         | Find files matching a glob pattern (`src/**/*.ts`)|
+| `ask_user`     | Ask the user — used for confirmation prompts      |
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `ZIPCODE_PROVIDER` | Provider type: 'openai' or 'custom' | openai | No |
-| `OPENAI_API_KEY` | 0penAI API key | - | For 0penAI |
-| `ZIPCODE_API_KEY` | Custom provider API key | - | For custom |
-| `ZIPCODE_BASE_URL` | Custom provider base URL | - | For custom |
-| `ZIPCODE_MODEL` | Model name | gpt-4-turbo-preview | No |
-| `ZIPCODE_MAX_TOKENS` | Max tokens per request | 4096 | No |
-| `ZIPCODE_TEMPERATURE` | Temperature (0-1) | 0.7 | No |
+The agent calls these via OpenAI tool-calling and may chain or parallelise calls during a single turn.
 
-## 🎮 Usage
+## Slash commands
 
-### Start ZIP CODE
+Type these in the input bar:
 
-```bash
-# If installed globally
-zipcode
+- `/help` — show keybinds and commands
+- `/new` — start a new session
+- `/sessions` — open the session browser
+- `/settings` — open the settings panel
+- `/clear` — clear the visible transcript
+- `/quit`, `/exit` — quit
 
-# Or run directly
-npm start
-
-# Development mode
-npm run dev
-```
-
-### Interactive Provider Setup
-
-```bash
-# In ZIP CODE, type:
-provider
-
-# Then follow the interactive menu to:
-# 1. Choose provider (0penAI or Custom)
-# 2. Enter API key
-# 3. Select model from auto-fetched list
-# 4. Start chatting immediately!
-```
-
-## 📋 Commands
-
-| Command | Description |
-|---------|-------------|
-| `exit`, `quit`, `q` | Exit ZIP CODE |
-| `help`, `h` | Show help message |
-| `clear`, `cls` | Clear the screen |
-| `history` | Show conversation history |
-| `reset` | Clear conversation history |
-| `streaming on/off` | Toggle streaming mode |
-| `save` | Save current conversation |
-| `load <id>` | Load a saved conversation |
-| `list` | List all saved conversations |
-| `export` | Export conversation to markdown |
-| `provider` | Interactive provider management |
-
-## 🛠️ Built-in Tools
-
-ZIP CODE comes with 5 powerful tools that the AI can use autonomously:
-
-### 1. **read_file**
-Read contents of any file
-```
-You: Read the package.json file
-```
-
-### 2. **write_file**
-Create or modify files
-```
-You: Create a hello.ts file with a simple function
-```
-
-### 3. **list_dir**
-List directory contents
-```
-You: Show me all TypeScript files in src/
-```
-
-### 4. **execute_bash**
-Run shell commands
-```
-You: Run npm install
-```
-
-### 5. **ask_user**
-Get user confirmation for sensitive operations
-```
-ZIP CODE: Should I delete this file? (y/n)
-```
-
-## 🎨 UI Features
-
-### Gradient ASCII Art Banner
-Beautiful purple-to-cyan gradient logo on startup
-
-### Custom Chat Borders
-- **User Input**: Purple border with blinking cursor
-- **AI Response**: Cyan border with markdown formatting
-
-### Syntax Highlighting
-Code blocks are automatically highlighted in the terminal
-
-### Real-time Streaming
-See AI responses appear token-by-token
-
-## 💾 Conversation Management
-
-### Save Conversations
-```bash
-You: save
-✓ Conversation saved: conv_1714420800000
-```
-
-### Load Previous Conversations
-```bash
-You: list
-# Shows all saved conversations with metadata
-
-You: load conv_1714420800000
-✓ Conversation loaded
-```
-
-### Export to Markdown
-```bash
-You: export
-✓ Conversation exported to: zipcode-export-1714420800000.md
-```
-
-## 🔧 Custom Provider Examples
-
-### LM Studio (Local)
-```bash
-export ZIPCODE_PROVIDER=custom
-export ZIPCODE_API_KEY="lm-studio"
-export ZIPCODE_BASE_URL="http://localhost:1234/v1"
-export ZIPCODE_MODEL="local-model"
-```
-
-### Ollama
-```bash
-export ZIPCODE_PROVIDER=custom
-export ZIPCODE_API_KEY="ollama"
-export ZIPCODE_BASE_URL="http://localhost:11434/v1"
-export ZIPCODE_MODEL="llama2"
-```
-
-### Custom API Gateway
-```bash
-export ZIPCODE_PROVIDER=custom
-export ZIPCODE_API_KEY="your-gateway-key"
-export ZIPCODE_BASE_URL="https://api.yourcompany.com/v1"
-export ZIPCODE_MODEL="custom-gpt-4"
-```
-
-## 📖 Example Usage
-
-```bash
-$ zipcode
-
- ┏━━━━┓━━┓━━━┓┃┃┃━━━┓━━━┓━━━┓━━━┓
- ┗━━┓┃┃┫┣┛┏━┓┃┃┃┃┏━┓┃┏━┓┃┓┏┓┃┏━━┛
- ┃┃┏┛┏┛┃┃┃┗━┛┃┃┃┃┃┃┗┛┃┃┃┃┃┃┃┃┗━━┓
- ┃┏┛┏┛┃┃┃┃┏━━┛┃┃┃┃┃┏┓┃┃┃┃┃┃┃┃┏━━┛
- ┏┛┃┗━┓┫┣┓┃┃┃┃┃┃┃┗━┛┃┗━┛┃┛┗┛┃┗━━┓
- ┗━━━━┛━━┛┛┃┃┃┃┃┃━━━┛━━━┛━━━┛━━━┛
-
-           AI Coding Assistant v1.3.0
-
-Type 'exit' to quit, 'help' for commands
-
-🤖 Provider: 0penAI
-   Model: gpt-4
-
-█ ███ ███ █ ███ █ █ █████ █████ ███ ███ ███████ █ █ █ █ █ █
-> Create a TypeScript function to calculate fibonacci
-█ ███ ███ █ ███ █ █ █████ █████ ███ ███ ███████ █ █ █ █ █ █
-
-█ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █
-I'll create a TypeScript function to calculate Fibonacci numbers.
-
-[Tool: write_file]
-File: fibonacci.ts
-
-✓ File created successfully
-
-The function is ready! It includes:
-- Recursive implementation
-- Memoization for performance
-- Type safety with TypeScript
-█ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █
-```
-
-## 🏗️ Architecture
+## Storage
 
 ```
-┌─────────────┐
-│   User      │
-│  Terminal   │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────┐
-│         CLI Interface                │
-│  - Input handling                    │
-│  - Output rendering                  │
-│  - Provider management               │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│      Agent Core (ReAct Loop)        │
-│  - Conversation history              │
-│  - Tool call parsing                 │
-│  - Response streaming                │
-└──────────┬──────────────────────────┘
-           │
-           ├──────────────┬─────────────┐
-           ▼              ▼             ▼
-    ┌──────────┐   ┌──────────┐  ┌──────────┐
-    │   LLM    │   │  Tools   │  │    UI    │
-    │ Provider │   │  System  │  │ Renderer │
-    └──────────┘   └──────────┘  └──────────┘
+~/.zipcode/
+└── zipcode.db        # SQLite — sessions, messages, app config
 ```
 
-## 📂 Project Structure
+Tables:
+
+- `sessions` — id, title, timestamps, model, provider
+- `messages` — id, session_id, role, content, tool metadata, created_at
+- `app_config` — key/value store for in-app settings
+
+## Project structure
 
 ```
-zipcode/
-├── src/
-│   ├── index.ts              # CLI entry point
-│   ├── agent.ts              # Agent with ReAct loop
-│   ├── tools.ts              # Tool implementations
-│   ├── ui.ts                 # Terminal UI utilities
-│   ├── config.ts             # Configuration management
-│   ├── types.ts              # TypeScript types
-│   ├── persistence.ts        # Conversation persistence
-│   └── provider-manager.ts   # Provider management
-├── test/
-│   └── tools.test.ts         # Tests
-├── scripts/
-│   └── make-executable.js    # Build script
-├── dist/                     # Compiled output
-├── .zipcode-conversations/   # Saved conversations
-├── package.json
-├── tsconfig.json
-├── README.md
-├── CHANGELOG.md              # Complete documentation
-├── LICENSE
-└── .env.example
+src/
+├── index.tsx           # Ink bootstrap
+├── agent.ts            # ReAct loop + tool calling + event emitter
+├── tools.ts            # Tool implementations + JSON schemas
+├── store.ts            # SQLite (better-sqlite3) layer
+├── config.ts           # Config load/save (DB-backed + env fallback)
+├── types.ts            # Shared types
+└── ui/
+    ├── App.tsx         # Root component, modal & keybind logic
+    ├── Header.tsx      # Top bar (provider/model/session/cwd)
+    ├── MessageView.tsx # Chat transcript with markdown rendering
+    ├── InputBar.tsx    # Text input
+    ├── StatusBar.tsx   # Spinner / hints / errors
+    ├── ToolCallView.tsx# Tool call visualisation
+    ├── ConfigPanel.tsx # Ctrl+S settings modal
+    ├── SessionList.tsx # Ctrl+L session browser
+    ├── Banner.tsx      # Gradient ASCII banner
+    ├── markdown.ts     # Lightweight inline markdown renderer
+    └── theme.ts        # Color tokens + gradient helpers
 ```
 
-## 🧪 Development
+## License
 
-### Run in Development Mode
-```bash
-npm run dev
-```
-
-### Build
-```bash
-npm run build
-```
-
-### Run Tests
-```bash
-npm test
-```
-
-### Link Globally
-```bash
-npm link
-zipcode
-```
-
-## 🔒 Security
-
-- API keys stored in environment variables only
-- File operations restricted to accessible paths
-- Shell commands have 30-second timeout
-- Dangerous operations require user confirmation
-- No data sent to third parties (except chosen LLM provider)
-
-## 🚀 Performance
-
-- **Startup Time:** < 500ms
-- **Memory Usage:** < 100MB typical
-- **Conversation Limit:** Up to 100 messages
-- **Streaming:** Real-time token-by-token output
-
-## 📝 Version History
-
-### v1.3.0 (Current)
-- ✨ Interactive provider management with arrow key navigation
-- 🎨 Gradient ASCII art banner
-- 🎨 Custom chat borders with gradient colors
-- 🔄 Seamless provider switching without restart
-- 📋 Automatic model discovery from API
-
-### v1.2.0
-- 🔧 Custom provider support (0penAI SDK compatible)
-- ⚙️ Optional API key (tools-only mode)
-- 📚 Comprehensive provider documentation
-
-### v1.1.0
-- 💾 Conversation persistence
-- 📤 Export to markdown
-- 📋 List saved conversations
-
-### v1.0.0
-- 🎉 Initial release
-- 🤖 ReAct agent implementation
-- 🛠️ 5 core tools
-- 💬 Real-time streaming
-- 🎨 Terminal UI
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with TypeScript and Node.js
-- Inspired by OpenCode/Code Assistant
-- Uses 0penAI API for LLM capabilities
-- Terminal UI powered by picocolors and marked
-
-## 📞 Support
-
-For detailed documentation, see [CHANGELOG.md](CHANGELOG.md)
-
-For issues and questions:
-- 📧 Email: support@zipcode.dev
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/zipcode/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/zipcode/discussions)
-
----
-
-<div align="center">
-
-**Made with ❤️ by the ZIP CODE Team**
-
-[⭐ Star us on GitHub](https://github.com/yourusername/zipcode) | [📖 Documentation](CHANGELOG.md) | [🐛 Report Bug](https://github.com/yourusername/zipcode/issues)
-
-</div>
+MIT
