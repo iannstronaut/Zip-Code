@@ -1,6 +1,13 @@
 // Basic tests for ZIP CODE tools
 
-import { readFile, writeFile, listDir, executeBash } from '../src/tools';
+import {
+  readFile,
+  writeFile,
+  listDir,
+  executeBash,
+  globSearch,
+  grepSearch,
+} from '../src/tools';
 import { existsSync, unlinkSync } from 'fs';
 import { resolve } from 'path';
 
@@ -40,6 +47,24 @@ async function testListDir() {
   console.log('✓ Directory listing tests passed');
 }
 
+// Test glob & grep
+async function testGlobAndGrep() {
+  console.log('Testing glob & grep...');
+
+  const globResult = await globSearch('src/**/*.ts');
+  console.assert(globResult.success, 'glob should succeed');
+  console.assert(globResult.output.includes('store.ts'), 'glob should find store.ts');
+
+  const grepResult = await grepSearch('export function', 'src');
+  console.assert(grepResult.success, 'grep should succeed');
+  console.assert(
+    grepResult.output.includes('export function'),
+    'grep output should include matches'
+  );
+
+  console.log('✓ Glob & grep tests passed');
+}
+
 // Test bash execution
 async function testBashExecution() {
   console.log('Testing bash execution...');
@@ -75,6 +100,7 @@ async function runTests() {
   try {
     await testFileOperations();
     await testListDir();
+    await testGlobAndGrep();
     await testBashExecution();
     await testErrorHandling();
     
