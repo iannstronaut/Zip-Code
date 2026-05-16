@@ -3,8 +3,12 @@
 import type { ToolDefinition, ToolResult } from './types';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { isUrlSafe, RateLimiter } from './security';
 
 const execAsync = promisify(exec);
+
+// Rate limiter for web requests
+const webRateLimiter = new RateLimiter(20, 60000); // 20 requests per minute
 
 // Web tools definitions
 export const WEB_TOOLS: ToolDefinition[] = [
@@ -91,6 +95,15 @@ export async function webSearch(
   limit: number = 5
 ): Promise<ToolResult> {
   try {
+    // Check rate limit
+    if (!webRateLimiter.isAllowed('search')) {
+      return {
+        success: false,
+        output: '',
+        error: `Rate limit exceeded. ${webRateLimiter.getRemaining('search')} searches remaining in this minute.`,
+      };
+    }
+
     // Use DuckDuckGo instant answer API
     const maxResults = Math.min(limit, 20);
     const encodedQuery = encodeURIComponent(query);
@@ -147,6 +160,24 @@ export async function httpRequest(
   body?: string
 ): Promise<ToolResult> {
   try {
+    // Check rate limit
+    if (!webRateLimiter.isAllowed('http')) {
+      return {
+        success: false,
+        output: '',
+        error: `Rate limit exceeded. ${webRateLimiter.getRemaining('http')} requests remaining in this minute.`,
+      };
+    }
+
+    // Validate URL
+    if (!isUrlSafe(url)) {
+      return {
+        success: false,
+        output: '',
+        error: `Unsafe URL detected: ${url}\nRequests to private IPs and non-HTTP(S) protocols are blocked.`,
+      };
+    }
+
     let command = `curl -s -X ${method}`;
 
     // Add headers
@@ -193,6 +224,24 @@ export async function downloadFile(
   output: string
 ): Promise<ToolResult> {
   try {
+    // Check rate limit
+    if (!webRateLimiter.isAllowed('download')) {
+      return {
+        success: false,
+        output: '',
+        error: `Rate limit exceeded. ${webRateLimiter.getRemaining('download')} downloads remaining in this minute.`,
+      };
+    }
+
+    // Validate URL
+    if (!isUrlSafe(url)) {
+      return {
+        success: false,
+        output: '',
+        error: `Unsafe URL detected: ${url}\nDownloads from private IPs and non-HTTP(S) protocols are blocked.`,
+      };
+    }
+
     const command = `curl -L -o "${output}" "${url}"`;
 
     const { stdout, stderr } = await execAsync(command, {

@@ -15,8 +15,22 @@ import { promisify } from 'util';
 import { GIT_TOOLS } from './git-tools';
 import { WEB_TOOLS } from './web-tools';
 import { WATCHER_TOOLS } from './watcher-tools';
+import {
+  sanitizePath,
+  isDangerousCommand,
+  RateLimiter,
+  ResultCache,
+} from './security';
 
 const execAsync = promisify(exec);
+
+// Rate limiters for different operations
+const bashRateLimiter = new RateLimiter(30, 60000); // 30 commands per minute
+const webRateLimiter = new RateLimiter(20, 60000); // 20 requests per minute
+
+// Result cache for expensive operations
+const fileCache = new ResultCache<string>(100, 30000); // 100 files, 30s TTL
+const dirCache = new ResultCache<string>(50, 30000); // 50 dirs, 30s TTL
 
 // Tool definitions for LLM
 export const TOOLS: ToolDefinition[] = [
@@ -170,11 +184,22 @@ export const TOOLS: ToolDefinition[] = [
 
 export async function readFile(path: string): Promise<ToolResult> {
   try {
-    const resolvedPath = resolve(path);
+    // Check cache first
+    const cacheKey = `read:${path}`;
+    const cached = fileCache.get(cacheKey);
+    if (cached) {
+      return { success: true, output: cached };
+    }
+
+    const resolvedPath = sanitizePath(path);
     if (!existsSync(resolvedPath)) {
       return { success: false, output: '', error: `File not found: ${path}` };
     }
     const content = await fsReadFile(resolvedPath, 'utf-8');
+
+    // Cache the result
+    fileCache.set(cacheKey, content);
+
     return { success: true, output: content };
   } catch (error: any) {
     return {
@@ -190,12 +215,16 @@ export async function writeFile(
   content: string
 ): Promise<ToolResult> {
   try {
-    const resolvedPath = resolve(path);
+    const resolvedPath = sanitizePath(path);
     const dir = dirname(resolvedPath);
     if (!existsSync(dir)) {
       await mkdir(dir, { recursive: true });
     }
     await fsWriteFile(resolvedPath, content, 'utf-8');
+
+    // Invalidate cache
+    fileCache.set(`read:${path}`, content);
+
     return {
       success: true,
       output: `File written: ${path} (${Buffer.byteLength(content, 'utf-8')} bytes)`,
@@ -256,6 +285,24 @@ export async function listDir(path: string = '.'): Promise<ToolResult> {
 
 export async function executeBash(command: string): Promise<ToolResult> {
   try {
+    // Check rate limit
+    if (!bashRateLimiter.isAllowed('bash')) {
+      return {
+        success: false,
+        output: '',
+        error: `Rate limit exceeded. ${bashRateLimiter.getRemaining('bash')} commands remaining in this minute.`,
+      };
+    }
+
+    // Check for dangerous commands
+    if (isDangerousCommand(command)) {
+      return {
+        success: false,
+        output: '',
+        error: `Dangerous command detected: ${command}\nThis command has been blocked for security reasons.`,
+      };
+    }
+
     const { stdout, stderr } = await execAsync(command, {
       timeout: 30000,
       maxBuffer: 1024 * 1024 * 10,
@@ -268,8 +315,8 @@ export async function executeBash(command: string): Promise<ToolResult> {
   } catch (error: any) {
     return {
       success: false,
-      output: error?.stdout || '',
-      error: error?.stderr || error?.message || 'Command execution failed',
+      output: '',
+      error: `Command failed: ${error?.message || error}`,
     };
   }
 }
