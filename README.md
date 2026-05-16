@@ -11,7 +11,7 @@
 
 **A modern, Ink-powered Terminal UI agent for coding assistance.**
 
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
@@ -97,6 +97,15 @@ Two paths — both work:
 | `watch_file`   | Watch files/directories for changes               |
 | `stop_watch`   | Stop watching a file/directory                    |
 | `list_watches` | List all active file watches                      |
+
+### Code Analysis Tools (NEW in v2.2)
+
+| Tool                   | Description                                       |
+| ---------------------- | ------------------------------------------------- |
+| `analyze_complexity`   | Analyze code complexity metrics                   |
+| `find_todos`           | Find TODO/FIXME/HACK/NOTE comments                |
+| `analyze_dependencies` | Analyze project dependencies                      |
+| `count_lines`          | Count lines of code by file type                  |
 
 The agent calls these via OpenAI tool-calling and may chain or parallelise calls during a single turn.
 

@@ -15,6 +15,7 @@ import { promisify } from 'util';
 import { GIT_TOOLS } from './git-tools';
 import { WEB_TOOLS } from './web-tools';
 import { WATCHER_TOOLS } from './watcher-tools';
+import { CODE_ANALYSIS_TOOLS } from './code-analysis-tools';
 import {
   sanitizePath,
   isDangerousCommand,
@@ -178,6 +179,7 @@ export const TOOLS: ToolDefinition[] = [
   ...GIT_TOOLS,
   ...WEB_TOOLS,
   ...WATCHER_TOOLS,
+  ...CODE_ANALYSIS_TOOLS,
 ];
 
 // ──────────── implementations ────────────
@@ -538,6 +540,10 @@ export async function executeTool(
   // Import watcher functions dynamically
   const { watchFile, stopWatch, listWatches } = await import('./watcher-tools');
 
+  // Import code analysis functions dynamically
+  const { analyzeComplexity, findTodos, analyzeDependencies, countLines } =
+    await import('./code-analysis-tools');
+
   switch (name) {
     case 'read_file':
       return readFile(args.path);
@@ -579,6 +585,14 @@ export async function executeTool(
       return stopWatch(args.watchId);
     case 'list_watches':
       return listWatches();
+    case 'analyze_complexity':
+      return analyzeComplexity(args.path);
+    case 'find_todos':
+      return findTodos(args.path);
+    case 'analyze_dependencies':
+      return analyzeDependencies(args.path);
+    case 'count_lines':
+      return countLines(args.path);
     case 'ask_user': {
       if (askUserHandler) {
         try {
