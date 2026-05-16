@@ -12,6 +12,9 @@ import {
 import { join, resolve, dirname, relative, sep } from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { GIT_TOOLS } from './git-tools';
+import { WEB_TOOLS } from './web-tools';
+import { WATCHER_TOOLS } from './watcher-tools';
 
 const execAsync = promisify(exec);
 
@@ -158,6 +161,9 @@ export const TOOLS: ToolDefinition[] = [
       },
     },
   },
+  ...GIT_TOOLS,
+  ...WEB_TOOLS,
+  ...WATCHER_TOOLS,
 ];
 
 // ──────────── implementations ────────────
@@ -467,6 +473,24 @@ export async function executeTool(
   name: string,
   args: any
 ): Promise<ToolResult> {
+  // Import git functions dynamically
+  const {
+    gitStatus,
+    gitDiff,
+    gitLog,
+    gitBranch,
+    gitCommit,
+    gitPush,
+    gitPull,
+    gitAdd,
+  } = await import('./git-tools');
+
+  // Import web functions dynamically
+  const { webSearch, httpRequest, downloadFile } = await import('./web-tools');
+
+  // Import watcher functions dynamically
+  const { watchFile, stopWatch, listWatches } = await import('./watcher-tools');
+
   switch (name) {
     case 'read_file':
       return readFile(args.path);
@@ -480,6 +504,34 @@ export async function executeTool(
       return grepSearch(args.pattern, args.path, args.maxResults);
     case 'glob':
       return globSearch(args.pattern, args.path);
+    case 'git_status':
+      return gitStatus(args.path);
+    case 'git_diff':
+      return gitDiff(args.path, args.staged);
+    case 'git_log':
+      return gitLog(args.limit, args.oneline);
+    case 'git_branch':
+      return gitBranch(args.action, args.name);
+    case 'git_commit':
+      return gitCommit(args.message, args.all);
+    case 'git_push':
+      return gitPush(args.remote, args.branch, args.force);
+    case 'git_pull':
+      return gitPull(args.remote, args.branch);
+    case 'git_add':
+      return gitAdd(args.paths);
+    case 'web_search':
+      return webSearch(args.query, args.limit);
+    case 'http_request':
+      return httpRequest(args.url, args.method, args.headers, args.body);
+    case 'download_file':
+      return downloadFile(args.url, args.output);
+    case 'watch_file':
+      return watchFile(args.path, args.recursive);
+    case 'stop_watch':
+      return stopWatch(args.watchId);
+    case 'list_watches':
+      return listWatches();
     case 'ask_user': {
       if (askUserHandler) {
         try {

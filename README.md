@@ -11,7 +11,7 @@
 
 **A modern, Ink-powered Terminal UI agent for coding assistance.**
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
@@ -68,6 +68,35 @@ Two paths — both work:
 | `grep`         | Recursively search file contents with a regex     |
 | `glob`         | Find files matching a glob pattern (`src/**/*.ts`)|
 | `ask_user`     | Ask the user — used for confirmation prompts      |
+
+### Git Tools (NEW in v2.1)
+
+| Tool           | Description                                       |
+| -------------- | ------------------------------------------------- |
+| `git_status`   | Check repository status                           |
+| `git_diff`     | View staged/unstaged changes                      |
+| `git_log`      | Show commit history                               |
+| `git_branch`   | List, create, switch, or delete branches          |
+| `git_commit`   | Create commits                                    |
+| `git_push`     | Push to remote repository                         |
+| `git_pull`     | Pull from remote repository                       |
+| `git_add`      | Stage files for commit                            |
+
+### Web Tools (NEW in v2.1)
+
+| Tool           | Description                                       |
+| -------------- | ------------------------------------------------- |
+| `web_search`   | Search the web using DuckDuckGo                   |
+| `http_request` | Make HTTP requests (GET, POST, PUT, DELETE)       |
+| `download_file`| Download files from URLs                          |
+
+### File Watcher Tools (NEW in v2.1)
+
+| Tool           | Description                                       |
+| -------------- | ------------------------------------------------- |
+| `watch_file`   | Watch files/directories for changes               |
+| `stop_watch`   | Stop watching a file/directory                    |
+| `list_watches` | List all active file watches                      |
 
 The agent calls these via OpenAI tool-calling and may chain or parallelise calls during a single turn.
 
