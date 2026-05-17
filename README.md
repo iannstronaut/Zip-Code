@@ -11,7 +11,7 @@
 
 **A modern, Ink-powered Terminal UI agent for coding assistance.**
 
-[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
@@ -149,6 +149,62 @@ export ZIPCODE_LOG_CONSOLE=true
 # Enable local telemetry (privacy-first, stored at ~/.zipcode/telemetry/)
 export ZIPCODE_TELEMETRY=true
 ```
+
+## What's New in v2.4 — Multi-Agent Architecture
+
+ZIP CODE can now spawn specialized sub-agents with different models and tool sets.
+
+### Sub-agent System
+
+| Tool             | Description                                                |
+| ---------------- | ---------------------------------------------------------- |
+| `delegate_task`  | Spawn a sub-agent with its own model, profile, and context |
+| `list_profiles`  | List available sub-agent profiles                          |
+
+### Agent Profiles
+
+| Profile        | Description                              | Tools                            |
+| -------------- | ---------------------------------------- | -------------------------------- |
+| `general`      | Default coding assistant                 | All                              |
+| `orchestrator` | Decomposes & delegates tasks             | delegate_task + read-only        |
+| `coder`        | Writes/edits code (low temperature)      | All except delegate_task         |
+| `reviewer`     | Reviews code (read-only, no execution)   | read_file, grep, git_diff, etc.  |
+| `debugger`     | Investigates bugs methodically           | All except delegate_task         |
+| `researcher`   | Web search and docs                      | web_search, http_request, etc.   |
+| `writer`       | Writes documentation                     | read_file, write_file, etc.      |
+
+### Memory System
+
+| Tool             | Description                              |
+| ---------------- | ---------------------------------------- |
+| `memory_add`     | Save a durable fact                      |
+| `memory_search`  | Search memory by keyword                 |
+| `memory_list`    | List all entries (optional category)     |
+| `memory_remove`  | Remove an entry by ID                    |
+
+Categories: `user`, `project`, `tech`, `preference`, `fact`. Stored at `~/.zipcode/memory.json`.
+
+### Workspace Context
+
+Drop a `.zipcoderc`, `ZIPCODE.md`, `AGENTS.md`, or `.cursorrules` in your project root.
+ZIP CODE auto-loads it into the system prompt.
+
+```yaml
+---
+name: my-app
+language: TypeScript
+test: pnpm test
+build: pnpm build
+---
+
+Use functional React components, prefer named exports.
+```
+
+### Resilience
+
+- **Retry with exponential backoff** — auto-retries 429s, 5xx, network errors
+- **Circuit breaker** — fails fast after repeated failures, auto-recovers
+- **Token usage tracking** — see `~/.zipcode/logs/` for cost estimates per session
 
 ## Slash commands
 

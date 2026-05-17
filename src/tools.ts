@@ -16,6 +16,8 @@ import { GIT_TOOLS } from './git-tools';
 import { WEB_TOOLS } from './web-tools';
 import { WATCHER_TOOLS } from './watcher-tools';
 import { CODE_ANALYSIS_TOOLS } from './code-analysis-tools';
+import { DELEGATION_TOOLS } from './sub-agent';
+import { MEMORY_TOOLS } from './memory-tools';
 import { sanitizePath, isDangerousCommand, RateLimiter, ResultCache } from './security';
 
 const execAsync = promisify(exec);
@@ -174,6 +176,8 @@ export const TOOLS: ToolDefinition[] = [
   ...WEB_TOOLS,
   ...WATCHER_TOOLS,
   ...CODE_ANALYSIS_TOOLS,
+  ...DELEGATION_TOOLS,
+  ...MEMORY_TOOLS,
 ];
 
 // ──────────── implementations ────────────
@@ -516,6 +520,14 @@ export async function executeTool(name: string, args: any): Promise<ToolResult> 
   const { analyzeComplexity, findTodos, analyzeDependencies, countLines } =
     await import('./code-analysis-tools');
 
+  // Import delegation functions dynamically
+  const { delegateTask, listProfilesTool } = await import('./sub-agent');
+
+  // Import memory functions dynamically
+  const { memoryAdd, memorySearch, memoryList, memoryRemove } = await import(
+    './memory-tools'
+  );
+
   switch (name) {
     case 'read_file':
       return readFile(args.path);
@@ -565,6 +577,18 @@ export async function executeTool(name: string, args: any): Promise<ToolResult> 
       return analyzeDependencies(args.path);
     case 'count_lines':
       return countLines(args.path);
+    case 'delegate_task':
+      return delegateTask(args);
+    case 'list_profiles':
+      return listProfilesTool();
+    case 'memory_add':
+      return memoryAdd(args.content, args.category);
+    case 'memory_search':
+      return memorySearch(args.query, args.limit);
+    case 'memory_list':
+      return memoryList(args.category);
+    case 'memory_remove':
+      return memoryRemove(args.id);
     case 'ask_user': {
       if (askUserHandler) {
         try {

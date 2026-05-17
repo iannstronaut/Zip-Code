@@ -6,6 +6,68 @@ All notable changes, implementation details, and guides for ZIP CODE.
 
 ## Version History
 
+### [2.4.0] - 2026-05-17
+
+#### Added — Multi-Agent Architecture
+
+**Sub-agent System** (`src/sub-agent.ts`, `src/agent-profiles.ts`)
+- `delegate_task` tool — spawn sub-agents with their own model, profile, and context
+- `list_profiles` tool — see available specializations
+- 7 specialized profiles:
+  - `general` — default coding assistant
+  - `orchestrator` — decomposes complex tasks, delegates to sub-agents
+  - `coder` — focused code-writing (low temperature, blocks delegate_task)
+  - `reviewer` — read-only code review (no write/execute)
+  - `debugger` — methodical bug investigation
+  - `researcher` — web search and documentation
+  - `writer` — documentation and prose
+- Per-profile tool allowlist/denylist
+- Per-profile temperature, max iterations, system prompt
+- Sub-agents run in isolated context — only summary returned to parent
+
+**Long-term Memory** (`src/memory-tools.ts`)
+- 4 new tools: `memory_add`, `memory_search`, `memory_list`, `memory_remove`
+- 5 categories: user, project, tech, preference, fact
+- Persisted at `~/.zipcode/memory.json`
+- Deduplication by content hash
+- Hit counter to surface frequently-used facts
+
+**Workspace Context** (`src/workspace.ts`)
+- Auto-discovers `.zipcoderc`, `ZIPCODE.md`, `AGENTS.md`, `CLAUDE.md`, `.cursorrules`
+- Walks up directory tree from CWD
+- Optional YAML frontmatter for structured metadata (name, language, test, build, lint)
+- Loaded into system prompt automatically
+
+**Resilience** (`src/resilience.ts`)
+- `retry()` — exponential backoff with jitter, configurable shouldRetry predicate
+- `defaultShouldRetry()` — retries 429, 5xx, network errors; not 4xx
+- `CircuitBreaker` — three states (CLOSED/OPEN/HALF_OPEN), auto-recovery
+- Logs all retries and state transitions
+
+**Token Usage & Cost Tracking** (`src/usage-tracker.ts`)
+- Tracks prompt/completion tokens per session
+- Pricing table for OpenAI, Anthropic, local models
+- Prefix matching for model versions (e.g. gpt-4o-2024-08-06)
+- Aggregate stats across sessions
+- Formatted summaries for display
+
+#### Testing
+- Test count: 52 → 107 (+106%)
+- New test files:
+  - `test/agent-profiles.test.ts` (11 tests)
+  - `test/resilience-and-usage.test.ts` (22 tests)
+  - `test/workspace.test.ts` (11 tests)
+  - `test/memory.test.ts` (11 tests)
+
+#### Stats
+- Total tools: 25 → 31 (+6 new tools)
+- Test count: 52 → 107 (+55 tests)
+- New modules: 6 (sub-agent, agent-profiles, memory-tools, workspace, resilience, usage-tracker)
+- Build: ✅ Pass
+- Tests: 107/107 ✅
+
+---
+
 ### [2.3.0] - 2026-05-17
 
 #### Added - Production Hardening
