@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+npm-debug.log
+
+# Build artifacts
+dist/
+*.tsbuildinfo
+
+# Test
+test/
+coverage/
+.vitest/
+
+# Git
+.git/
+.gitignore
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+docs/
+
+# Hermes
+.hermes/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Misc
+*.tar.gz
+*.zip
+.npm/

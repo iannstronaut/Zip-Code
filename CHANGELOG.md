@@ -6,427 +6,342 @@ All notable changes, implementation details, and guides for ZIP CODE.
 
 ## Version History
 
-### [1.3.0] - 2026-04-29
+### [2.5.0] - 2026-05-17
 
-#### Added
-- **Interactive Provider Management**: Full interactive setup for LLM providers
-- **Automatic Model Discovery**: Fetch and select models from API
-- **Provider Switching**: Change providers without restart
-- **Gradient ASCII Art Banner**: Beautiful purple-to-cyan gradient logo
-- **Custom Chat Borders**: Unique ASCII borders for user and assistant messages
-- **Blinking Input Cursor**: Bold blinking '>' prompt
-- **Persistent Configuration**: Save provider config to `.zipcode-config.json`
+#### Added - Extensibility & Ecosystem
 
-#### Features
-- Interactive provider selection with arrow keys
-- Automatic model listing from 0penAI and custom providers
-- Real-time provider switching
-- Gradient color theme throughout app
-- Custom ASCII art branding
+**🔌 MCP Client (`src/mcp-client.ts`)**
+- Connect to external MCP (Model Context Protocol) servers via stdio transport
+- Auto-discover and register tools (namespaced as `mcp__<server>__<tool>`)
+- JSON-RPC over stdio with handshake, tools/list, and tools/call
+- Multiple servers configured at `~/.zipcode/mcp-servers.json`
+- Lifecycle managed with graceful shutdown on exit/SIGINT
+- Unlimited extensibility - works with any MCP-compatible server
 
-#### Commands Added
-- `provider` - Interactive provider management menu
+**🪝 Hooks/Middleware System (`src/hooks.ts`)**
+- Pre/post tool execution hooks (audit, validate, confirm, rewrite)
+- Pre/post message hooks
+- Session start/end hooks
+- Tool name filter (string or regex)
+- Block tool execution with custom reason
+- Rewrite tool args before execution
+- Built-in factories: `registerAuditHook`, `registerConfirmHook`, `registerValidationHook`
+- Errors in hooks logged but never break the agent
 
-#### UI Improvements
-- ASCII art banner with gradient (purple #6229d6 → cyan #2eb2b8)
-- User input border: `█ ███ ███ █ ███ █ █ █████ █████ ███ ███ ███████ █ █ █ █ █ █`
-- Assistant output border: `█ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █`
-- Blinking bold cursor for input
-- Consistent gradient color scheme
+**⚡ Custom Slash Commands (`src/slash-commands.ts`)**
+- User-defined shortcuts loaded from markdown files
+- Two locations: `./.zipcode/commands/` (project) and `~/.zipcode/commands/` (user)
+- YAML frontmatter for metadata (description, args)
+- Variable substitution: `{{arg1}}`, `{{name}}`, `{{args}}`
+- Project commands override user commands
 
-### [1.2.0] - 2026-04-29
+**🗄️ Database Tools (`src/database-tools.ts`)**
+- `sql_query` - Execute SQL against SQLite databases
+- `sql_schema` - Inspect tables, indexes, columns
+- Read-only mode by default (SELECT/PRAGMA/EXPLAIN/WITH allowed)
+- Opt-in write mode via `allow_write=true`
+- Result row cap (500 default) to protect context window
+- Lazy import - reuses existing better-sqlite3 dependency
 
-#### Added
-- **Optional API Key**: Run without API key in tools-only mode
-- **Custom Provider Support**: Use any 0penAI SDK compatible endpoint
-- **Provider Configuration**: Flexible provider setup via environment variables
+**💰 Budget Guards (`src/budget-guard.ts`)**
+- Hard caps on USD spent, tokens used, tool calls made
+- Configurable via env: `ZIPCODE_BUDGET_USD`, `ZIPCODE_BUDGET_TOKENS`, `ZIPCODE_BUDGET_TOOLCALLS`
+- Soft warnings at 75% and 90% (fire once per threshold)
+- Projected delta check before operations
+- Snapshot for status display
 
-#### Features
-- Tools-only mode for basic file operations
-- Support for LM Studio, Ollama, and custom APIs
-- Provider info command
-- Fallback to environment variables
+**📝 Prompt Templates (`src/prompt-templates.ts`)**
+- Built-in library: review, refactor, debug, tests, explain, docs, optimize, security
+- User templates at `~/.zipcode/prompts/<name>.md`
+- Project templates at `./.zipcode/prompts/<name>.md`
+- Variable syntax with defaults: `{{name|default}}`
+- Precedence: builtin < user < project
 
-#### Environment Variables Added
-- `ZIPCODE_PROVIDER` - Provider type ('openai' or 'custom')
-- `ZIPCODE_API_KEY` - API key for custom provider
-- `ZIPCODE_BASE_URL` - Base URL for custom provider
+**📤 Conversation Export (`src/conversation-export.ts`)**
+- Three formats: Markdown, HTML (self-contained, dark mode), JSON
+- Tool calls folded into details/summary blocks
+- Time range filtering (since/until)
+- Hide system/tool messages on demand
+- HTML escapes user content to prevent XSS
 
-### [1.1.0] - 2026-04-29
+#### Testing
+- Test suite expanded: 107 → 147 tests (+37%)
+- New test files:
+  - `test/hooks.test.ts` (14 tests)
+  - `test/budget-guard.test.ts` (12 tests)
+  - `test/prompt-templates.test.ts` (5 tests)
+  - `test/conversation-export.test.ts` (12 tests)
 
-#### Added
-- **Conversation Persistence**: Save and load conversations to/from disk
-- **Export to Markdown**: Export conversations to formatted markdown files
-- **List Conversations**: View all saved conversations with metadata
-- New commands: `save`, `load <id>`, `list`, `export`
-- Automatic conversation metadata tracking
-- Conversation storage in `.zipcode-conversations/` directory
+#### Tools Integration
+- 31 → 33 native tools (+`sql_query`, `sql_schema`)
+- Plus dynamic MCP tools loaded at runtime via `getAllTools()`
+- Hook system intercepts every tool execution (pre/post)
 
-#### Features
-- Save conversations with timestamp and metadata
-- Load previous conversations to continue where you left off
-- Export conversations to shareable markdown format
-- List all saved conversations with message counts
-
-### [1.0.0] - 2026-04-29
-
-#### Added
-- Initial release of ZIP CODE
-- Core agent with ReAct loop implementation
-- Five essential tools: read_file, write_file, list_dir, execute_bash, ask_user
-- Real-time streaming responses from LLM
-- Beautiful terminal UI with markdown rendering and syntax highlighting
-- Conversation history management
-- Error handling and recovery
-- Configuration via environment variables
-- Support for 0penAI API (GPT-4, GPT-3.5)
-- Interactive CLI with command support
-- Comprehensive documentation
-
-#### Features
-- **Autonomous Agent**: ReAct pattern for reasoning and acting
-- **Tool System**: Extensible tool architecture
-- **Streaming**: Token-by-token response streaming
-- **UI/UX**: Color-coded messages, spinners, markdown rendering
-- **Error Handling**: Robust error recovery and user-friendly messages
-- **Configuration**: Flexible configuration via environment variables
-
-#### Commands
-- `exit`, `quit`, `q` - Exit the application
-- `help`, `h` - Show help message
-- `clear`, `cls` - Clear screen
-- `history` - Show conversation history
-- `reset` - Clear conversation history
-- `streaming on/off` - Toggle streaming mode
-
-#### Technical
-- Built with TypeScript and Node.js
-- Uses 0penAI API for LLM capabilities
-- Modular architecture for easy extension
-- Production-ready error handling
-- Comprehensive type safety
+#### Stats
+- Lines of code: ~7000 → ~9500 (+35%)
+- Tests: 107 → 147 (+37%)
+- Build: ✅ Pass
+- All tests: ✅ Pass
 
 ---
 
-## Implementation Summary
+### [2.4.0] - 2026-05-17
 
-### Project Overview
+#### Added — Multi-Agent Architecture
 
-ZIP CODE is a fully functional AI CLI Agent built with TypeScript and Node.js, implementing the ReAct (Reasoning + Acting) pattern for autonomous coding assistance.
+**Sub-agent System** (`src/sub-agent.ts`, `src/agent-profiles.ts`)
+- `delegate_task` tool — spawn sub-agents with their own model, profile, and context
+- `list_profiles` tool — see available specializations
+- 7 specialized profiles:
+  - `general` — default coding assistant
+  - `orchestrator` — decomposes complex tasks, delegates to sub-agents
+  - `coder` — focused code-writing (low temperature, blocks delegate_task)
+  - `reviewer` — read-only code review (no write/execute)
+  - `debugger` — methodical bug investigation
+  - `researcher` — web search and documentation
+  - `writer` — documentation and prose
+- Per-profile tool allowlist/denylist
+- Per-profile temperature, max iterations, system prompt
+- Sub-agents run in isolated context — only summary returned to parent
 
-### All Milestones Completed ✅
+**Long-term Memory** (`src/memory-tools.ts`)
+- 4 new tools: `memory_add`, `memory_search`, `memory_list`, `memory_remove`
+- 5 categories: user, project, tech, preference, fact
+- Persisted at `~/.zipcode/memory.json`
+- Deduplication by content hash
+- Hit counter to surface frequently-used facts
 
-#### Milestone 1: Foundation (Week 1)
-- Project initialization with TypeScript and Node.js
-- Basic CLI interface with enquirer for user input
-- Tool system architecture with 5 core tools
-- Modular file structure (agent, tools, ui, config, types)
-- Build system with TypeScript compiler
-- Comprehensive type definitions
+**Workspace Context** (`src/workspace.ts`)
+- Auto-discovers `.zipcoderc`, `ZIPCODE.md`, `AGENTS.md`, `CLAUDE.md`, `.cursorrules`
+- Walks up directory tree from CWD
+- Optional YAML frontmatter for structured metadata (name, language, test, build, lint)
+- Loaded into system prompt automatically
 
-#### Milestone 2: LLM Integration (Week 2)
-- 0penAI API integration
-- Function calling implementation
-- Conversation history management
-- System prompt design
-- Provider-agnostic architecture
+**Resilience** (`src/resilience.ts`)
+- `retry()` — exponential backoff with jitter, configurable shouldRetry predicate
+- `defaultShouldRetry()` — retries 429, 5xx, network errors; not 4xx
+- `CircuitBreaker` — three states (CLOSED/OPEN/HALF_OPEN), auto-recovery
+- Logs all retries and state transitions
 
-#### Milestone 3: Agent Logic (Week 3)
-- ReAct pattern implementation
-- Tool call parsing and execution
-- Multi-step reasoning
-- Enhanced error recovery
-- Tool execution counter
-- Iteration limits to prevent infinite loops
+**Token Usage & Cost Tracking** (`src/usage-tracker.ts`)
+- Tracks prompt/completion tokens per session
+- Pricing table for OpenAI, Anthropic, local models
+- Prefix matching for model versions (e.g. gpt-4o-2024-08-06)
+- Aggregate stats across sessions
+- Formatted summaries for display
 
-#### Milestone 4: UI/UX Polish (Week 4)
-- Color scheme with picocolors
-- Markdown rendering with syntax highlighting
-- Loading spinners and indicators
-- Real-time streaming text rendering
-- Terminal width handling
-- User/AI message differentiation
+#### Testing
+- Test count: 52 → 107 (+106%)
+- New test files:
+  - `test/agent-profiles.test.ts` (11 tests)
+  - `test/resilience-and-usage.test.ts` (22 tests)
+  - `test/workspace.test.ts` (11 tests)
+  - `test/memory.test.ts` (11 tests)
 
-#### Milestone 5: Production Ready (Week 5)
-- Comprehensive documentation
-- MIT LICENSE
-- Example .env configuration
-- Basic test suite
-- Professional README with architecture diagrams
-- Development guide
-- Clear contribution guidelines
-
-#### Milestone 6: Advanced Features (Week 6+)
-- Conversation persistence to disk
-- Save/load conversation functionality
-- Export to markdown
-- List saved conversations
-- Automatic metadata tracking
-
-### Technical Stack
-
-- **Runtime:** Node.js 18+
-- **Language:** TypeScript (strict mode)
-- **LLM Provider:** 0penAI API (with custom provider support)
-- **UI Libraries:** picocolors, marked, ora
-- **CLI Library:** enquirer
-- **Build Tool:** TypeScript Compiler
-
-### Project Structure
-
-```
-zipcode/
-├── src/
-│   ├── index.ts          # CLI entry point
-│   ├── agent.ts          # Agent core with ReAct loop
-│   ├── tools.ts          # Tool implementations
-│   ├── ui.ts             # Terminal UI utilities
-│   ├── config.ts         # Configuration management
-│   ├── types.ts          # TypeScript types
-│   ├── persistence.ts    # Conversation persistence
-│   └── provider-manager.ts # Provider management
-├── test/
-│   └── tools.test.ts     # Basic tests
-├── scripts/
-│   └── make-executable.js # Build post-processing
-├── dist/                 # Compiled output
-├── .zipcode-conversations/ # Saved conversations
-├── package.json
-├── tsconfig.json
-├── README.md
-├── CHANGELOG.md
-├── LICENSE
-└── .env.example
-```
+#### Stats
+- Total tools: 25 → 31 (+6 new tools)
+- Test count: 52 → 107 (+55 tests)
+- New modules: 6 (sub-agent, agent-profiles, memory-tools, workspace, resilience, usage-tracker)
+- Build: ✅ Pass
+- Tests: 107/107 ✅
 
 ---
 
-## Custom Provider Guide
+### [2.3.0] - 2026-05-17
 
-### Provider Options
+#### Added - Production Hardening
 
-#### 1. 0penAI (Default)
+**Observability**
+- **Structured Logging System** (`src/logger.ts`)
+  - JSON-formatted logs with timestamps and context
+  - Configurable log levels (DEBUG, INFO, WARN, ERROR, FATAL)
+  - Auto-redaction of sensitive data (API keys, passwords, tokens)
+  - File-based logs at `~/.zipcode/logs/`
+  - Optional console output
 
-The default provider using 0penAI's official API.
+- **Privacy-first Telemetry** (`src/telemetry.ts`)
+  - **OPT-IN by default** — zero data collected unless `ZIPCODE_TELEMETRY=true`
+  - All data stored locally at `~/.zipcode/telemetry/`
+  - No external transmission
+  - Auto-sanitization of sensitive metadata
+  - Tool usage, performance, and error tracking
+  - Error fingerprinting for deduplication
 
-**Configuration:**
-```bash
-export ZIPCODE_PROVIDER=openai
-export OPENAI_API_KEY="sk-your-key-here"
-export ZIPCODE_MODEL="gpt-4"  # optional
-```
+**Deployment**
+- **Docker Support**
+  - Multi-stage Dockerfile (builder + runtime)
+  - Non-root user for security
+  - Health checks
+  - `.dockerignore` for smaller images
+  - `docker-compose.yml` with environment configuration
+  - Persistent volume for sessions
 
-**Supported Models:**
-- gpt-4
-- gpt-4-turbo-preview
-- gpt-3.5-turbo
-- gpt-4-32k
+**Documentation**
+- `CONTRIBUTING.md` — Contributor guide with development workflow
+- `SECURITY.md` — Security policy and disclosure process
+- `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1
 
-#### 2. Custom Provider (0penAI SDK Compatible)
+**GitHub Templates**
+- Bug report template
+- Feature request template
+- Pull request template
 
-Use any API endpoint that supports the 0penAI SDK format.
+**Testing**
+- Comprehensive test suite expanded from 8 to 52 tests
+- New test files:
+  - `test/security.test.ts` (26 tests)
+  - `test/code-analysis.test.ts` (10 tests)
+  - `test/watcher.test.ts` (8 tests)
+- Coverage: tools, security utilities, code analysis, watchers
 
-**Configuration:**
-```bash
-export ZIPCODE_PROVIDER=custom
-export ZIPCODE_API_KEY="your-custom-key"
-export ZIPCODE_BASE_URL="https://your-endpoint.com/v1"
-export ZIPCODE_MODEL="your-model-name"
-```
+#### Cleanup
+- Removed leftover `test-debug.js` debug file
 
-**Examples:**
-
-##### LM Studio (Local)
-```bash
-export ZIPCODE_PROVIDER=custom
-export ZIPCODE_API_KEY="lm-studio"
-export ZIPCODE_BASE_URL="http://localhost:1234/v1"
-export ZIPCODE_MODEL="local-model"
-```
-
-##### Ollama with 0penAI Compatibility
-```bash
-export ZIPCODE_PROVIDER=custom
-export ZIPCODE_API_KEY="ollama"
-export ZIPCODE_BASE_URL="http://localhost:11434/v1"
-export ZIPCODE_MODEL="llama2"
-```
-
-#### 3. No API Key (Tools Only Mode)
-
-Run ZIP CODE without any LLM for basic file operations.
-
-**Available in Tools-Only Mode:**
-- File operations (read, write, list)
-- Shell command execution
-- Directory navigation
-- All CLI commands
-
-### Interactive Provider Setup
-
-Use the `provider` command for interactive setup:
-
-```bash
-You: provider
-
-? What would you like to do?
-❯ 🔄 Change Provider
-  👁️  View Current Config
-  ❌ Cancel
-```
-
-**Flow:**
-1. Select provider type (0penAI or Custom)
-2. Enter API key
-3. System fetches available models
-4. Select model with arrow keys
-5. Configuration saved automatically
-
-### Environment Variables Reference
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `ZIPCODE_PROVIDER` | Provider type: 'openai' or 'custom' | openai | No |
-| `OPENAI_API_KEY` | 0penAI API key | - | For 0penAI |
-| `ZIPCODE_API_KEY` | Custom provider API key | - | For custom |
-| `ZIPCODE_BASE_URL` | Custom provider base URL | - | For custom |
-| `ZIPCODE_MODEL` | Model name | gpt-4-turbo-preview | No |
-| `ZIPCODE_MAX_TOKENS` | Max tokens per request | 4096 | No |
-| `ZIPCODE_TEMPERATURE` | Temperature (0-1) | 0.7 | No |
+#### Stats
+- Tests: 8 → 52 (+550%)
+- Documentation files: 1 → 7
+- Production-ready features: ✅
+- Build: ✅ Pass
+- All tests: ✅ Pass
 
 ---
 
-## Development Guide
+### [2.2.0] - 2026-05-17
 
-### Architecture
+#### Added - Code Analysis Tools
+- **Code Analysis (4 new tools)**: Project insights and code quality
+  - `analyze_complexity` - Analyze code complexity metrics and largest files
+  - `find_todos` - Find and categorize TODO/FIXME/HACK/NOTE comments
+  - `analyze_dependencies` - Analyze dependencies from package.json, requirements.txt, go.mod
+  - `count_lines` - Count lines of code by file type with statistics
 
-#### Agent Core (agent.ts)
-The agent implements the ReAct (Reasoning + Acting) pattern:
-1. Receives user input
-2. Sends to LLM with available tools
-3. LLM decides to use tools or respond
-4. If tools are called, executes them and loops back
-5. Continues until LLM provides final response
+#### Improvements
+- Modular code analysis architecture
+- Support for multiple languages (TypeScript, JavaScript, Python, Go, Java, C/C++, Rust)
+- Grouped and categorized output for better readability
 
-#### Tool System (tools.ts)
-Five core tools are available:
-- `read_file`: Read file contents
-- `write_file`: Write/create files
-- `list_dir`: List directory contents
-- `execute_bash`: Run shell commands
-- `ask_user`: Get user confirmation
-
-#### UI System (ui.ts)
-Terminal rendering with:
-- Gradient ASCII art banner
-- Custom chat borders
-- Markdown rendering with syntax highlighting
-- Loading spinners
-- Error/success indicators
-
-### Development Commands
-
-```bash
-# Run in development mode
-npm run dev
-
-# Build for production
-npm run build
-
-# Run tests
-npm test
-
-# Link globally
-npm link
-```
-
-### Adding New Tools
-
-1. Define tool schema in `tools.ts`:
-```typescript
-{
-  type: 'function',
-  function: {
-    name: 'my_tool',
-    description: 'What the tool does',
-    parameters: {
-      type: 'object',
-      properties: {
-        param1: { type: 'string', description: '...' }
-      },
-      required: ['param1']
-    }
-  }
-}
-```
-
-2. Implement tool function:
-```typescript
-export async function myTool(param1: string): Promise<ToolResult> {
-  try {
-    // Implementation
-    return { success: true, output: 'result' };
-  } catch (error) {
-    return { success: false, output: '', error: String(error) };
-  }
-}
-```
-
-3. Add to `executeTool` switch statement
-
-### Security Considerations
-
-- Tool execution runs with user's permissions
-- Dangerous commands should trigger `ask_user` confirmation
-- File operations are restricted to accessible paths
-- Shell commands have 30-second timeout
-- API keys stored in environment variables only
-
-### Performance
-
-- Startup time: < 500ms
-- Memory usage: < 100MB typical
-- Supports conversations up to 100 messages
-- Streaming reduces perceived latency
+#### Stats
+- Total tools: 21 → 25 tools (+4 new tools)
+- Code analysis utilities: 250+ LOC
 
 ---
 
-## Success Criteria Met ✅
+### [2.1.0] - 2026-05-17
 
-### Functional Requirements
-- ✅ All 5 core tools implemented and working
-- ✅ LLM integration functional with streaming
-- ✅ ReAct loop executes correctly
-- ✅ Markdown rendering with syntax highlighting
-- ✅ Can be installed and run globally
-- ✅ Interactive provider management
-- ✅ Conversation persistence
+#### Added - Major Feature Release
+- **Git Integration (8 new tools)**: Full git workflow support
+  - `git_status` - Check repository status
+  - `git_diff` - View staged/unstaged changes
+  - `git_log` - Show commit history
+  - `git_branch` - Branch management (list, create, switch, delete)
+  - `git_commit` - Create commits with messages
+  - `git_push` - Push to remote repositories
+  - `git_pull` - Pull from remote repositories
+  - `git_add` - Stage files for commit
 
-### Non-Functional Requirements
-- ✅ Startup time < 500ms
-- ✅ Memory usage < 100MB
-- ✅ Modular, well-documented code
-- ✅ Type-safe TypeScript throughout
-- ✅ Comprehensive error handling
+- **Web Tools (3 new tools)**: Internet connectivity
+  - `web_search` - Search the web using DuckDuckGo
+  - `http_request` - Make HTTP requests (GET, POST, PUT, DELETE, PATCH)
+  - `download_file` - Download files from URLs
 
-### User Experience
-- ✅ Beautiful gradient ASCII art UI
-- ✅ Smooth, responsive interactions
-- ✅ Clear error messages
-- ✅ Intuitive to use
-- ✅ Interactive provider setup
+- **File Watcher Tools (3 new tools)**: Real-time file monitoring
+  - `watch_file` - Watch files/directories for changes
+  - `stop_watch` - Stop watching a file/directory
+  - `list_watches` - List all active file watches with recent changes
+
+#### Security & Performance
+- **Rate Limiting**: Prevent abuse and resource exhaustion
+  - Bash commands: 30 per minute
+  - Web requests: 20 per minute
+  
+- **Security Hardening**:
+  - Path sanitization (prevent directory traversal)
+  - Dangerous command detection (rm -rf /, fork bombs, etc.)
+  - URL validation (SSRF protection, block private IPs)
+  
+- **Performance Optimization**:
+  - File read caching (30s TTL, 100 files)
+  - Directory listing cache (30s TTL, 50 dirs)
+  - Reduced redundant I/O operations
+
+#### Development Infrastructure
+- **Testing Framework**: Vitest with coverage reporting
+- **Code Quality**: ESLint + Prettier + TypeScript strict mode
+- **Pre-commit Hooks**: Husky + lint-staged for automatic formatting
+- **CI/CD Pipeline**: GitHub Actions workflow
+  - Multi-version Node.js testing (18.x, 20.x)
+  - Automated type checking, linting, testing
+  - Code coverage upload to Codecov
+
+#### Improvements
+- Modular tool architecture (git-tools.ts, web-tools.ts, watcher-tools.ts, security.ts)
+- Dynamic tool loading for better performance
+- Comprehensive error handling for all new tools
+- Updated documentation with all new tools
+
+#### Stats
+- Total tools: 7 → 21 tools (+14 new tools)
+- Security utilities: 200+ LOC
+- Test coverage infrastructure added
+- CI/CD pipeline automated
+
+---
+
+### [2.0.0] - Previous Release
+
+ZIP CODE has been rewritten as a modern TUI inspired by `opencode`:
+
+- 🎨 **Ink + React TUI** with persistent header, scrolling message view, status bar, and modal panels
+- ⚙️ **Settings panel (Ctrl+S)** — switch provider, edit API key, fetch models, tweak temperature/tokens
+- 💾 **SQLite-backed sessions** at `~/.zipcode/zipcode.db`
+- 🔧 **Tool calling** — 7 core tools
+- ⚡ **Event-driven agent** — streaming tokens, parallel tool execution
+- 🗂 **Session browser (Ctrl+L)** — list, switch, and create sessions
+- ⌨️ **Keybinds**: `Ctrl+S` settings · `Ctrl+L` sessions · `Ctrl+N` new session
+
+---
+
+## Production Readiness
+
+### Security ✅
+- Rate limiting on all external operations
+- Path sanitization and validation
+- Command injection prevention
+- SSRF protection
+- Dangerous command detection
+
+### Performance ✅
+- Result caching for expensive operations
+- Optimized file I/O
+- Efficient tool loading
+- Memory-efficient data structures
+
+### Code Quality ✅
+- TypeScript strict mode
+- ESLint + Prettier
+- Pre-commit hooks
+- Comprehensive error handling
+- Modular architecture
+
+### Testing ✅
+- Vitest test framework
+- Unit tests for core tools
+- Coverage reporting
+- CI/CD pipeline
 
 ---
 
 ## Future Enhancements
 
 - Plugin system for custom tools
-- Web search integration
-- Git operations support
+- MCP (Model Context Protocol) support
 - Syntax highlighting themes
 - Multi-language support
 - Voice input/output
 - Web UI companion
+- Docker integration
+- Database tools
+- Cloud provider integrations
 
 ---
 
@@ -436,6 +351,6 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Current Version:** 1.3.0  
-**Last Updated:** April 29, 2026  
+**Current Version:** 2.2.0  
+**Last Updated:** May 17, 2026  
 **Status:** Production Ready ✅

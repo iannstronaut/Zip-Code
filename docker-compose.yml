@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  zipcode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zipcode:latest
+    container_name: zipcode-agent
+    
+    # Interactive TUI requires TTY
+    stdin_open: true
+    tty: true
+    
+    # Environment variables
+    environment:
+      - ZIPCODE_PROVIDER=${ZIPCODE_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ZIPCODE_API_KEY=${ZIPCODE_API_KEY:-}
+      - ZIPCODE_BASE_URL=${ZIPCODE_BASE_URL:-}
+      - ZIPCODE_MODEL=${ZIPCODE_MODEL:-gpt-4-turbo-preview}
+      - ZIPCODE_MAX_TOKENS=${ZIPCODE_MAX_TOKENS:-4096}
+      - ZIPCODE_TEMPERATURE=${ZIPCODE_TEMPERATURE:-0.7}
+      - ZIPCODE_LOG_LEVEL=${ZIPCODE_LOG_LEVEL:-INFO}
+    
+    # Persistent storage for sessions
+    volumes:
+      - zipcode-data:/home/zipcode/.zipcode
+      # Mount workspace (optional, for working with project files)
+      - ${WORKSPACE_DIR:-./workspace}:/workspace
+    
+    working_dir: /workspace
+    
+    restart: unless-stopped
+
+volumes:
+  zipcode-data:
+    driver: local

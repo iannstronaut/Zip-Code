@@ -1,6 +1,6 @@
 {
   "name": "zipcode",
-  "version": "2.0.0",
+  "version": "2.5.0",
   "type": "module",
   "description": "ZIP CODE - AI TUI Agent for coding assistance",
   "main": "dist/index.js",
@@ -12,8 +12,16 @@
     "build": "tsc && node scripts/make-executable.js",
     "start": "node dist/index.js",
     "link": "npm link",
-    "test": "tsx test/tools.test.ts",
-    "test:manual": "echo 'Run: npm run dev' && echo 'Then test manually with various commands'"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky install",
+    "pre-commit": "lint-staged"
   },
   "keywords": [
     "ai",
@@ -40,7 +48,24 @@
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.11.0",
     "@types/react": "^18.3.3",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vitest/coverage-v8": "^1.6.1",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.8.3",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^1.6.1"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }
