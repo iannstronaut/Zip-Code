@@ -6,6 +6,85 @@ All notable changes, implementation details, and guides for ZIP CODE.
 
 ## Version History
 
+### [2.5.0] - 2026-05-17
+
+#### Added - Extensibility & Ecosystem
+
+**🔌 MCP Client (`src/mcp-client.ts`)**
+- Connect to external MCP (Model Context Protocol) servers via stdio transport
+- Auto-discover and register tools (namespaced as `mcp__<server>__<tool>`)
+- JSON-RPC over stdio with handshake, tools/list, and tools/call
+- Multiple servers configured at `~/.zipcode/mcp-servers.json`
+- Lifecycle managed with graceful shutdown on exit/SIGINT
+- Unlimited extensibility - works with any MCP-compatible server
+
+**🪝 Hooks/Middleware System (`src/hooks.ts`)**
+- Pre/post tool execution hooks (audit, validate, confirm, rewrite)
+- Pre/post message hooks
+- Session start/end hooks
+- Tool name filter (string or regex)
+- Block tool execution with custom reason
+- Rewrite tool args before execution
+- Built-in factories: `registerAuditHook`, `registerConfirmHook`, `registerValidationHook`
+- Errors in hooks logged but never break the agent
+
+**⚡ Custom Slash Commands (`src/slash-commands.ts`)**
+- User-defined shortcuts loaded from markdown files
+- Two locations: `./.zipcode/commands/` (project) and `~/.zipcode/commands/` (user)
+- YAML frontmatter for metadata (description, args)
+- Variable substitution: `{{arg1}}`, `{{name}}`, `{{args}}`
+- Project commands override user commands
+
+**🗄️ Database Tools (`src/database-tools.ts`)**
+- `sql_query` - Execute SQL against SQLite databases
+- `sql_schema` - Inspect tables, indexes, columns
+- Read-only mode by default (SELECT/PRAGMA/EXPLAIN/WITH allowed)
+- Opt-in write mode via `allow_write=true`
+- Result row cap (500 default) to protect context window
+- Lazy import - reuses existing better-sqlite3 dependency
+
+**💰 Budget Guards (`src/budget-guard.ts`)**
+- Hard caps on USD spent, tokens used, tool calls made
+- Configurable via env: `ZIPCODE_BUDGET_USD`, `ZIPCODE_BUDGET_TOKENS`, `ZIPCODE_BUDGET_TOOLCALLS`
+- Soft warnings at 75% and 90% (fire once per threshold)
+- Projected delta check before operations
+- Snapshot for status display
+
+**📝 Prompt Templates (`src/prompt-templates.ts`)**
+- Built-in library: review, refactor, debug, tests, explain, docs, optimize, security
+- User templates at `~/.zipcode/prompts/<name>.md`
+- Project templates at `./.zipcode/prompts/<name>.md`
+- Variable syntax with defaults: `{{name|default}}`
+- Precedence: builtin < user < project
+
+**📤 Conversation Export (`src/conversation-export.ts`)**
+- Three formats: Markdown, HTML (self-contained, dark mode), JSON
+- Tool calls folded into details/summary blocks
+- Time range filtering (since/until)
+- Hide system/tool messages on demand
+- HTML escapes user content to prevent XSS
+
+#### Testing
+- Test suite expanded: 107 → 147 tests (+37%)
+- New test files:
+  - `test/hooks.test.ts` (14 tests)
+  - `test/budget-guard.test.ts` (12 tests)
+  - `test/prompt-templates.test.ts` (5 tests)
+  - `test/conversation-export.test.ts` (12 tests)
+
+#### Tools Integration
+- 31 → 33 native tools (+`sql_query`, `sql_schema`)
+- Plus dynamic MCP tools loaded at runtime via `getAllTools()`
+- Hook system intercepts every tool execution (pre/post)
+
+#### Stats
+- Lines of code: ~7000 → ~9500 (+35%)
+- Tests: 107 → 147 (+37%)
+- Build: ✅ Pass
+- All tests: ✅ Pass
+
+---
+
 ### [2.4.0] - 2026-05-17
 
 #### Added — Multi-Agent Architecture

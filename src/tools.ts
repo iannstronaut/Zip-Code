@@ -18,6 +18,9 @@ import { WATCHER_TOOLS } from './watcher-tools';
 import { CODE_ANALYSIS_TOOLS } from './code-analysis-tools';
 import { DELEGATION_TOOLS } from './sub-agent';
 import { MEMORY_TOOLS } from './memory-tools';
+import { DATABASE_TOOLS, sqlQuery, sqlSchema } from './database-tools';
+import { hookManager } from './hooks';
+import { mcpManager } from './mcp-client';
 import { sanitizePath, isDangerousCommand, RateLimiter, ResultCache } from './security';
 
 const execAsync = promisify(exec);
@@ -178,7 +181,13 @@ export const TOOLS: ToolDefinition[] = [
   ...CODE_ANALYSIS_TOOLS,
   ...DELEGATION_TOOLS,
   ...MEMORY_TOOLS,
+  ...DATABASE_TOOLS,
 ];
+
+/** All tools, including dynamic MCP tools loaded at runtime. */
+export function getAllTools(): ToolDefinition[] {
+  return [...TOOLS, ...mcpManager.getToolDefinitions()];
+}
 
 // ──────────── implementations ────────────
 
@@ -506,6 +515,47 @@ export function setAskUserHandler(handler: AskUserHandler | null): void {
 
 // Execute tool by name
 export async function executeTool(name: string, args: any): Promise<ToolResult> {
+  // Run pre-tool hooks (audit, validate, confirm, etc.)
+  const preResult = await hookManager.run({
+    event: 'pre-tool',
+    toolName: name,
+    args,
+  });
+  if (preResult.block) {
+    return {
+      success: false,
+      output: '',
+      error: preResult.blockReason || 'Tool execution blocked by hook',
+    };
+  }
+  if (preResult.rewriteArgs !== undefined) {
+    args = preResult.rewriteArgs;
+  }
+
+  // MCP tools are dispatched separately - they live behind the mcp__ prefix
+  if (mcpManager.isMCPTool(name)) {
+    const result = await mcpManager.execute(name, args);
+    await hookManager.run({
+      event: 'post-tool',
+      toolName: name,
+      args,
+      result,
+    });
+    return result;
+  }
+
+  // Run the actual tool, then dispatch post-tool hooks afterward.
+  const result = await dispatchTool(name, args);
+  await hookManager.run({
+    event: 'post-tool',
+    toolName: name,
+    args,
+    result,
+  });
+  return result;
+}
+
+async function dispatchTool(name: string, args: any): Promise<ToolResult> {
   // Import git functions dynamically
   const { gitStatus, gitDiff, gitLog, gitBranch, gitCommit, gitPush, gitPull, gitAdd } =
     await import('./git-tools');
@@ -589,6 +639,10 @@ export async function executeTool(name: string, args: any): Promise<ToolResult> 
       return memoryList(args.category);
     case 'memory_remove':
       return memoryRemove(args.id);
+    case 'sql_query':
+      return sqlQuery(args.db_path, args.query, args.params, args.limit, args.allow_write);
+    case 'sql_schema':
+      return sqlSchema(args.db_path, args.table);
     case 'ask_user': {
       if (askUserHandler) {
         try {

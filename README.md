@@ -11,7 +11,7 @@
 
 **A modern, Ink-powered Terminal UI agent for coding assistance.**
 
-[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
@@ -148,6 +148,38 @@ export ZIPCODE_LOG_CONSOLE=true
 ```bash
 # Enable local telemetry (privacy-first, stored at ~/.zipcode/telemetry/)
 export ZIPCODE_TELEMETRY=true
+```
+
+## What's New in v2.5 — Extensibility & Ecosystem
+
+- **🔌 MCP Client** — Connect to external Model Context Protocol servers; their tools auto-register as `mcp__<server>__<tool>`
+- **🪝 Hooks/Middleware** — Pre/post tool hooks for audit, validation, confirmation, arg rewriting; tool-name filters (string or regex); block with reason
+- **⚡ Custom Slash Commands** — Drop a markdown file in `~/.zipcode/commands/` or `./.zipcode/commands/`; type `/cmd args` to invoke
+- **🗄️ SQL Tools** — `sql_query` and `sql_schema` for SQLite; read-only by default, opt-in writes
+- **💰 Budget Guards** — Hard caps on USD/tokens/tool-calls per session; warnings at 75% and 90%
+- **📝 Prompt Templates** — 8 built-ins (review/refactor/debug/tests/explain/docs/optimize/security); user + project overrides
+- **📤 Conversation Export** — Markdown, HTML (dark mode), JSON formats with time-range filters
+
+### MCP server config
+
+`~/.zipcode/mcp-servers.json`:
+```json
+{
+  "servers": [
+    {
+      "name": "filesystem",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/some/dir"]
+    }
+  ]
+}
+```
+
+### Budget cap example
+
+```bash
+export ZIPCODE_BUDGET_USD=5.00
+export ZIPCODE_BUDGET_TOKENS=200000
+export ZIPCODE_BUDGET_TOOLCALLS=200
 ```
 
 ## What's New in v2.4 — Multi-Agent Architecture
