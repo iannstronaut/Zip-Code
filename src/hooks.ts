@@ -9,8 +9,8 @@
 // Hooks are registered with hookManager.register() and run in the order they
 // were registered. Errors in hooks are logged but do not break the agent.
 
-import { logger } from './logger';
-import type { ToolResult } from './types';
+import { logger } from './logger.js';
+import type { ToolResult } from './types.js';
 
 export type HookEvent =
   | 'pre-tool'

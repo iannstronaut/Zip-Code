@@ -1,9 +1,9 @@
 // Web search and HTTP tools for ZIP CODE
 
-import type { ToolDefinition, ToolResult } from './types';
+import type { ToolDefinition, ToolResult } from './types.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { isUrlSafe, RateLimiter } from './security';
+import { isUrlSafe, RateLimiter } from './security.js';
 
 const execAsync = promisify(exec);
 

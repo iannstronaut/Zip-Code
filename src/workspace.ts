@@ -4,7 +4,7 @@
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, dirname, resolve } from 'path';
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 export interface WorkspaceContext {
   /** Absolute path of the file that was loaded. */

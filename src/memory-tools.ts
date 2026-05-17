@@ -6,8 +6,8 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { createHash } from 'crypto';
-import type { ToolDefinition, ToolResult } from './types';
-import { logger } from './logger';
+import type { ToolDefinition, ToolResult } from './types.js';
+import { logger } from './logger.js';
 
 export interface MemoryEntry {
   id: string;

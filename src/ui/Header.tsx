@@ -61,7 +61,7 @@ export function Header({
       </Box>
 
       {/* Middle: session + badges */}
-      <Box flexDirection="row">
+      <Box flexDirection="row" marginX={2}>
         <Text color="gray">{sessionTitle}</Text>
         {toolCount !== undefined ? (
           <>
@@ -85,7 +85,7 @@ export function Header({
 
       {/* Right: cwd */}
       <Box>
-        <Text color="gray">{shorten(cwd, 36)}</Text>
+        <Text color="gray">📁 {shorten(cwd, 32)}</Text>
       </Box>
     </Box>
   );

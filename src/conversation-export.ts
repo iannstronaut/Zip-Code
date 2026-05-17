@@ -7,7 +7,7 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { dirname } from 'path';
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 export type ExportFormat = 'markdown' | 'html' | 'json';
 

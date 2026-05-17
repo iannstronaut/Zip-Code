@@ -1,9 +1,9 @@
 // Agent core - ReAct loop, tool calling, and event-driven streaming
 
 import { EventEmitter } from 'events';
-import type { ChatMessage, ToolCall } from './types';
-import { TOOLS, executeTool } from './tools';
-import { SYSTEM_PROMPT, loadConfigSync, type AppConfig } from './config';
+import type { ChatMessage, ToolCall } from './types.js';
+import { TOOLS, executeTool } from './tools.js';
+import { SYSTEM_PROMPT, loadConfigSync, type AppConfig } from './config.js';
 import {
   appendMessage,
   createSession,
@@ -12,7 +12,7 @@ import {
   toApiMessages,
   renameSession,
   getSession,
-} from './store';
+} from './store.js';
 
 export type AgentEvent =
   | { type: 'session'; sessionId: string }

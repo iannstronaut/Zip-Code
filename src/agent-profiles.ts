@@ -1,6 +1,6 @@
 // Agent profiles - specialized roles with different models, tools, and prompts
 
-import type { ToolDefinition } from './types';
+import type { ToolDefinition } from './types.js';
 
 export type ProfileName =
   | 'general'
