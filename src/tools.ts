@@ -16,12 +16,7 @@ import { GIT_TOOLS } from './git-tools';
 import { WEB_TOOLS } from './web-tools';
 import { WATCHER_TOOLS } from './watcher-tools';
 import { CODE_ANALYSIS_TOOLS } from './code-analysis-tools';
-import {
-  sanitizePath,
-  isDangerousCommand,
-  RateLimiter,
-  ResultCache,
-} from './security';
+import { sanitizePath, isDangerousCommand, RateLimiter, ResultCache } from './security';
 
 const execAsync = promisify(exec);
 
@@ -84,8 +79,7 @@ export const TOOLS: ToolDefinition[] = [
         properties: {
           path: {
             type: 'string',
-            description:
-              'Directory path to list (defaults to current working directory).',
+            description: 'Directory path to list (defaults to current working directory).',
           },
         },
         required: [],
@@ -212,10 +206,7 @@ export async function readFile(path: string): Promise<ToolResult> {
   }
 }
 
-export async function writeFile(
-  path: string,
-  content: string
-): Promise<ToolResult> {
+export async function writeFile(path: string, content: string): Promise<ToolResult> {
   try {
     const resolvedPath = sanitizePath(path);
     const dir = dirname(resolvedPath);
@@ -269,8 +260,7 @@ export async function listDir(path: string = '.'): Promise<ToolResult> {
     const output = details
       .map((d) => {
         const tag = d.type === 'dir' ? '[DIR] ' : '[FILE]';
-        const sizeStr =
-          d.type === 'file' ? `  ${d.size.toString().padStart(8)} bytes` : '';
+        const sizeStr = d.type === 'file' ? `  ${d.size.toString().padStart(8)} bytes` : '';
         return `${tag} ${d.name}${sizeStr}`;
       })
       .join('\n');
@@ -333,11 +323,7 @@ const IGNORED_DIRS = new Set([
   '.zipcode',
 ]);
 
-async function walk(
-  dir: string,
-  out: string[],
-  cap = 5000
-): Promise<void> {
+async function walk(dir: string, out: string[], cap = 5000): Promise<void> {
   if (out.length >= cap) return;
   let entries: string[];
   try {
@@ -405,10 +391,7 @@ function globToRegex(pattern: string): RegExp {
   return new RegExp('^' + s + '$');
 }
 
-export async function globSearch(
-  pattern: string,
-  path: string = '.'
-): Promise<ToolResult> {
+export async function globSearch(pattern: string, path: string = '.'): Promise<ToolResult> {
   try {
     const root = resolve(path);
     if (!existsSync(root)) {
@@ -518,21 +501,10 @@ export function setAskUserHandler(handler: AskUserHandler | null): void {
 }
 
 // Execute tool by name
-export async function executeTool(
-  name: string,
-  args: any
-): Promise<ToolResult> {
+export async function executeTool(name: string, args: any): Promise<ToolResult> {
   // Import git functions dynamically
-  const {
-    gitStatus,
-    gitDiff,
-    gitLog,
-    gitBranch,
-    gitCommit,
-    gitPush,
-    gitPull,
-    gitAdd,
-  } = await import('./git-tools');
+  const { gitStatus, gitDiff, gitLog, gitBranch, gitCommit, gitPush, gitPull, gitAdd } =
+    await import('./git-tools');
 
   // Import web functions dynamically
   const { webSearch, httpRequest, downloadFile } = await import('./web-tools');

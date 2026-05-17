@@ -11,7 +11,7 @@
 
 **A modern, Ink-powered Terminal UI agent for coding assistance.**
 
-[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
@@ -108,6 +108,47 @@ Two paths — both work:
 | `count_lines`          | Count lines of code by file type                  |
 
 The agent calls these via OpenAI tool-calling and may chain or parallelise calls during a single turn.
+
+## What's New in v2.3 - Production Hardening
+
+- **Structured Logging** — JSON logs with auto-redaction of secrets, configurable levels
+- **Privacy-first Telemetry** — Opt-in (OFF by default), all data stored locally
+- **Docker Support** — Multi-stage Dockerfile + docker-compose for easy deployment
+- **52 Tests** — Comprehensive test coverage for tools, security, watchers, analysis
+- **Documentation** — CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md
+- **GitHub Templates** — Bug report, feature request, PR template
+
+### Docker
+
+```bash
+# Build the image
+docker build -t zipcode .
+
+# Run with docker-compose
+docker-compose up
+
+# Or run directly
+docker run -it -e OPENAI_API_KEY=your-key zipcode
+```
+
+### Logging
+
+```bash
+# Set log level
+export ZIPCODE_LOG_LEVEL=DEBUG  # DEBUG | INFO | WARN | ERROR | FATAL
+
+# Enable console output
+export ZIPCODE_LOG_CONSOLE=true
+
+# Logs are written to ~/.zipcode/logs/zipcode-YYYY-MM-DD.log
+```
+
+### Telemetry (Opt-in)
+
+```bash
+# Enable local telemetry (privacy-first, stored at ~/.zipcode/telemetry/)
+export ZIPCODE_TELEMETRY=true
+```
 
 ## Slash commands
 

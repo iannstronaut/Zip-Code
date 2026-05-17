@@ -4,19 +4,25 @@ import { resolve, normalize } from 'path';
 import { homedir } from 'os';
 
 /**
- * Validate and sanitize file paths to prevent directory traversal attacks
+ * Validate and sanitize file paths to prevent directory traversal attacks.
+ * When baseDir is provided, ensures the path stays within it.
+ * When baseDir is omitted, just resolves and normalizes — no containment check.
  */
 export function sanitizePath(inputPath: string, baseDir?: string): string {
-  const base = baseDir || process.cwd();
-  const resolved = resolve(base, inputPath);
-  const normalized = normalize(resolved);
+  if (baseDir) {
+    const resolved = resolve(baseDir, inputPath);
+    const normalized = normalize(resolved);
 
-  // Ensure the path is within the base directory
-  if (!normalized.startsWith(normalize(base))) {
-    throw new Error(`Path traversal detected: ${inputPath}`);
+    // Ensure the path is within the base directory
+    if (!normalized.startsWith(normalize(baseDir))) {
+      throw new Error(`Path traversal detected: ${inputPath}`);
+    }
+
+    return normalized;
   }
 
-  return normalized;
+  // No base dir — just resolve and normalize (handles ../ etc.)
+  return normalize(resolve(inputPath));
 }
 
 /**

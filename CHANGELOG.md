@@ -6,6 +6,65 @@ All notable changes, implementation details, and guides for ZIP CODE.
 
 ## Version History
 
+### [2.3.0] - 2026-05-17
+
+#### Added - Production Hardening
+
+**Observability**
+- **Structured Logging System** (`src/logger.ts`)
+  - JSON-formatted logs with timestamps and context
+  - Configurable log levels (DEBUG, INFO, WARN, ERROR, FATAL)
+  - Auto-redaction of sensitive data (API keys, passwords, tokens)
+  - File-based logs at `~/.zipcode/logs/`
+  - Optional console output
+
+- **Privacy-first Telemetry** (`src/telemetry.ts`)
+  - **OPT-IN by default** — zero data collected unless `ZIPCODE_TELEMETRY=true`
+  - All data stored locally at `~/.zipcode/telemetry/`
+  - No external transmission
+  - Auto-sanitization of sensitive metadata
+  - Tool usage, performance, and error tracking
+  - Error fingerprinting for deduplication
+
+**Deployment**
+- **Docker Support**
+  - Multi-stage Dockerfile (builder + runtime)
+  - Non-root user for security
+  - Health checks
+  - `.dockerignore` for smaller images
+  - `docker-compose.yml` with environment configuration
+  - Persistent volume for sessions
+
+**Documentation**
+- `CONTRIBUTING.md` — Contributor guide with development workflow
+- `SECURITY.md` — Security policy and disclosure process
+- `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1
+
+**GitHub Templates**
+- Bug report template
+- Feature request template
+- Pull request template
+
+**Testing**
+- Comprehensive test suite expanded from 8 to 52 tests
+- New test files:
+  - `test/security.test.ts` (26 tests)
+  - `test/code-analysis.test.ts` (10 tests)
+  - `test/watcher.test.ts` (8 tests)
+- Coverage: tools, security utilities, code analysis, watchers
+
+#### Cleanup
+- Removed leftover `test-debug.js` debug file
+
+#### Stats
+- Tests: 8 → 52 (+550%)
+- Documentation files: 1 → 7
+- Production-ready features: ✅
+- Build: ✅ Pass
+- All tests: ✅ Pass
+
+---
+
 ### [2.2.0] - 2026-05-17
 
 #### Added - Code Analysis Tools
