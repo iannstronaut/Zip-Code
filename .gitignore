@@ -15,3 +15,7 @@ test-file.txt
 .zipcode-conversations/
 zipcode-export-*.md
 .zipcode-config.json
+
+# Internal tooling — not for public repo
+.github/
+.hermes/
