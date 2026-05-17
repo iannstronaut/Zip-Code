@@ -4,6 +4,7 @@ import type { ChatMessage } from '../types.js';
 import { renderMarkdownLines } from './markdown.js';
 import { ToolCallView } from './ToolCallView.js';
 import { gradient } from './theme.js';
+import { StreamingCursor } from './StreamingIndicator.js';
 
 export interface MessageViewProps {
   messages: ChatMessage[];
@@ -12,7 +13,6 @@ export interface MessageViewProps {
 
 export function MessageView({
   messages,
-  maxHeight,
 }: MessageViewProps): JSX.Element {
   // Skip empty messages and system messages (handled elsewhere)
   const visible = messages.filter((m) => {
@@ -25,8 +25,8 @@ export function MessageView({
   return (
     <Box flexDirection="column" flexGrow={1} paddingX={1}>
       {visible.length === 0 ? <EmptyState /> : null}
-      {visible.map((m) => (
-        <MessageRow key={m.id} message={m} />
+      {visible.map((m, idx) => (
+        <MessageRow key={m.id} message={m} isLast={idx === visible.length - 1} />
       ))}
     </Box>
   );
@@ -36,62 +36,102 @@ function EmptyState(): JSX.Element {
   const colors = gradient(2);
   return (
     <Box flexDirection="column" paddingY={1}>
-      <Text color={colors[0]} bold>
-        Welcome to ZIP CODE.
-      </Text>
-      <Text color="gray">
-        Ask anything, or try: "list files in src/", "read package.json", or
-        "what does agent.ts do?"
-      </Text>
-      <Box marginTop={1}>
-        <Text color="gray">Press </Text>
-        <Text color={colors[1]} bold>
-          Ctrl+S
+      <Box>
+        <Text color={colors[0]}>╭─</Text>
+        <Text color={colors[0]} bold>
+          {' '}✨ Welcome to ZIP CODE{' '}
         </Text>
-        <Text color="gray"> to configure your provider.</Text>
+        <Text color={colors[0]}>─╮</Text>
+      </Box>
+      <Box marginTop={1}>
+        <Text color="gray">  Try asking:</Text>
+      </Box>
+      <Box marginLeft={2}>
+        <Text color={colors[1]}>  ▸ </Text>
+        <Text color="white">"list files in src/"</Text>
+      </Box>
+      <Box marginLeft={2}>
+        <Text color={colors[1]}>  ▸ </Text>
+        <Text color="white">"read package.json and explain it"</Text>
+      </Box>
+      <Box marginLeft={2}>
+        <Text color={colors[1]}>  ▸ </Text>
+        <Text color="white">"what does agent.ts do?"</Text>
+      </Box>
+      <Box marginTop={1}>
+        <Text color="gray">  Or browse features:  </Text>
+        <Text color={colors[1]} bold>Ctrl+T</Text>
+        <Text color="gray"> tools · </Text>
+        <Text color={colors[1]} bold>Ctrl+P</Text>
+        <Text color="gray"> profiles · </Text>
+        <Text color={colors[1]} bold>/help</Text>
       </Box>
     </Box>
   );
 }
 
-function MessageRow({ message }: { message: ChatMessage }): JSX.Element {
+function MessageRow({
+  message,
+  isLast,
+}: {
+  message: ChatMessage;
+  isLast: boolean;
+}): JSX.Element {
   if (message.role === 'tool') {
     return <ToolCallView message={message} />;
   }
 
   const isUser = message.role === 'user';
   const label = isUser ? 'You' : 'ZIP CODE';
+  const icon = isUser ? '👤' : '🤖';
   const labelColor = isUser ? 'magentaBright' : 'cyanBright';
   const accent = isUser ? 'magenta' : 'cyan';
+  const isStreaming = !!message.streaming && isLast;
 
   return (
     <Box flexDirection="column" marginTop={1}>
       <Box>
-        <Text color={accent}>▎</Text>
+        <Text color={accent} bold>▎</Text>
         <Text color={labelColor} bold>
-          {' '}
-          {label}
+          {' '}{icon} {label}
         </Text>
-        {message.streaming ? (
-          <Text color="gray"> · streaming…</Text>
+        {isStreaming ? (
+          <Text color="cyan"> · streaming</Text>
+        ) : null}
+        {message.createdAt ? (
+          <Text color="gray"> · {formatTime(message.createdAt)}</Text>
         ) : null}
       </Box>
       {message.content ? (
         <Box marginLeft={2} flexDirection="column">
-          {renderMarkdownLines(message.content).map((line, i) => (
-            <RenderedLine key={i} line={line} />
+          {renderMarkdownLines(message.content).map((line, i, arr) => (
+            <RenderedLine
+              key={i}
+              line={line}
+              showCursor={isStreaming && i === arr.length - 1}
+            />
           ))}
+          {/* If content is empty-trailing, still show a cursor */}
+          {isStreaming && message.content.endsWith('\n') ? (
+            <Box>
+              <StreamingCursor active />
+            </Box>
+          ) : null}
+        </Box>
+      ) : isStreaming ? (
+        <Box marginLeft={2}>
+          <StreamingCursor active />
         </Box>
       ) : null}
       {message.toolCalls && message.toolCalls.length > 0 ? (
-        <Box marginLeft={2} flexDirection="column">
+        <Box marginLeft={2} flexDirection="column" marginTop={1}>
           {message.toolCalls.map((tc) => (
-            <Text key={tc.id} color="gray">
-              → calling{' '}
+            <Box key={tc.id}>
+              <Text color="gray">  → calling </Text>
               <Text color="blueBright" bold>
                 {tc.function.name}
               </Text>
-            </Text>
+            </Box>
           ))}
         </Box>
       ) : null}
@@ -101,8 +141,10 @@ function MessageRow({ message }: { message: ChatMessage }): JSX.Element {
 
 function RenderedLine({
   line,
+  showCursor,
 }: {
   line: ReturnType<typeof renderMarkdownLines>[number];
+  showCursor?: boolean;
 }): JSX.Element {
   switch (line.type) {
     case 'code':
@@ -110,13 +152,17 @@ function RenderedLine({
         <Box>
           <Text color="gray">│ </Text>
           <Text color="cyan">{line.text}</Text>
+          {showCursor ? <StreamingCursor active /> : null}
         </Box>
       );
     case 'heading':
       return (
-        <Text color="yellow" bold>
-          {line.text}
-        </Text>
+        <Box>
+          <Text color="yellow" bold>
+            {line.text}
+          </Text>
+          {showCursor ? <StreamingCursor active /> : null}
+        </Box>
       );
     case 'rule':
       return <Text color="gray">────────────────────────────────────</Text>;
@@ -125,6 +171,7 @@ function RenderedLine({
         <Box>
           <Text color="gray">  • </Text>
           <Text>{line.text}</Text>
+          {showCursor ? <StreamingCursor active /> : null}
         </Box>
       );
     case 'quote':
@@ -132,9 +179,22 @@ function RenderedLine({
         <Box>
           <Text color="gray">│ </Text>
           <Text color="gray">{line.text}</Text>
+          {showCursor ? <StreamingCursor active /> : null}
         </Box>
       );
     default:
-      return <Text>{line.text}</Text>;
+      return (
+        <Box>
+          <Text>{line.text}</Text>
+          {showCursor ? <StreamingCursor active /> : null}
+        </Box>
+      );
   }
+}
+
+function formatTime(ts: number): string {
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
 }

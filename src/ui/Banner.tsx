@@ -14,9 +14,14 @@ const ASCII = [
 export interface BannerProps {
   compact?: boolean;
   subtitle?: string;
+  version?: string;
 }
 
-export function Banner({ compact = false, subtitle }: BannerProps): JSX.Element {
+export function Banner({
+  compact = false,
+  subtitle,
+  version = '2.6.0',
+}: BannerProps): JSX.Element {
   const colors = gradient(ASCII.length);
 
   if (compact) {
@@ -24,7 +29,7 @@ export function Banner({ compact = false, subtitle }: BannerProps): JSX.Element 
       <Box flexDirection="column" marginBottom={1}>
         <Text color={colors[0]} bold>
           {' '}ZIP CODE
-          <Text color={colors[colors.length - 1]}> · TUI</Text>
+          <Text color={colors[colors.length - 1]}> · TUI v{version}</Text>
         </Text>
         {subtitle ? <Text color="gray">{subtitle}</Text> : null}
       </Box>
@@ -38,11 +43,22 @@ export function Banner({ compact = false, subtitle }: BannerProps): JSX.Element 
           {line}
         </Text>
       ))}
-      {subtitle ? (
-        <Box marginTop={1}>
-          <Text color="gray">{subtitle}</Text>
+      <Box marginTop={1} flexDirection="column" paddingX={1}>
+        <Box>
+          <Text color={colors[0]} bold>
+            {' '}AI Coding Agent
+          </Text>
+          <Text color="gray"> · </Text>
+          <Text color={colors[colors.length - 1]}>v{version}</Text>
+          <Text color="gray"> · </Text>
+          <Text color="gray">multi-agent · MCP · 33+ tools</Text>
         </Box>
-      ) : null}
+        {subtitle ? (
+          <Box marginTop={1}>
+            <Text color="gray"> {subtitle}</Text>
+          </Box>
+        ) : null}
+      </Box>
     </Box>
   );
 }

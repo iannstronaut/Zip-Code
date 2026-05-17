@@ -254,6 +254,30 @@ class MCPManager {
     return defs;
   }
 
+  /** Get connection status for all configured servers (for UI). */
+  getServerStatus(): Array<{
+    name: string;
+    connected: boolean;
+    toolCount: number;
+    command?: string[];
+  }> {
+    const status: Array<{
+      name: string;
+      connected: boolean;
+      toolCount: number;
+      command?: string[];
+    }> = [];
+    this.connections.forEach((conn, serverName) => {
+      status.push({
+        name: serverName,
+        connected: conn.initialized,
+        toolCount: conn.initialized ? conn.getTools().length : 0,
+        command: (conn as any).config?.command,
+      });
+    });
+    return status;
+  }
+
   /** Execute an MCP tool. Returns ToolResult. */
   async execute(toolName: string, args: any): Promise<ToolResult> {
     // Parse mcp__<server>__<tool>

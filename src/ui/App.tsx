@@ -7,6 +7,13 @@ import { InputBar } from './InputBar.js';
 import { SettingsPanel } from './SettingsPanel.js';
 import { SessionList } from './SessionList.js';
 import { Banner } from './Banner.js';
+import { ToolsPanel } from './ToolsPanel.js';
+import { ProfilesPanel } from './ProfilesPanel.js';
+import { TemplatesPanel } from './TemplatesPanel.js';
+import { BudgetPanel } from './BudgetPanel.js';
+import { MemoryPanel } from './MemoryPanel.js';
+import { MCPPanel } from './MCPPanel.js';
+import { ExportPanel } from './ExportPanel.js';
 import { Agent, type AgentEvent } from '../agent.js';
 import {
   loadConfigSync,
@@ -14,9 +21,23 @@ import {
   type AppConfig,
 } from '../config.js';
 import { listSessions } from '../store.js';
+import { TOOLS } from '../tools.js';
+import { mcpManager } from '../mcp-client.js';
+import { budgetGuard } from '../budget-guard.js';
+import { promptTemplates } from '../prompt-templates.js';
 import type { ChatMessage, SessionRow } from '../types.js';
 
-type Modal = 'none' | 'settings' | 'sessions';
+type Modal =
+  | 'none'
+  | 'settings'
+  | 'sessions'
+  | 'tools'
+  | 'profiles'
+  | 'templates'
+  | 'budget'
+  | 'memory'
+  | 'mcp'
+  | 'export';
 
 export function App(): JSX.Element {
   const { exit } = useApp();
@@ -31,6 +52,13 @@ export function App(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [sessionTitle, setSessionTitle] = useState('New session');
   const [showBanner, setShowBanner] = useState(true);
+  const [budgetSnapshot, setBudgetSnapshot] = useState(() => budgetGuard.snapshot());
+  const [mcpServerCount, setMcpServerCount] = useState(0);
+  // Streaming progress tracking for the current assistant message
+  const [streamingId, setStreamingId] = useState<string | null>(null);
+  const [streamCharCount, setStreamCharCount] = useState(0);
+  const [streamStartedAt, setStreamStartedAt] = useState<number | undefined>(undefined);
+  const [streamLastDeltaAt, setStreamLastDeltaAt] = useState<number | undefined>(undefined);
 
   const agentRef = useRef<Agent | null>(null);
 
@@ -52,6 +80,15 @@ export function App(): JSX.Element {
     };
   }, []);
 
+  // Refresh budget + mcp status periodically
+  useEffect(() => {
+    const id = setInterval(() => {
+      setBudgetSnapshot(budgetGuard.snapshot());
+      setMcpServerCount(mcpManager.getServerStatus().filter((s) => s.connected).length);
+    }, 2000);
+    return () => clearInterval(id);
+  }, []);
+
   // Subscribe to agent events
   useEffect(() => {
     if (!agent) return;
@@ -71,6 +108,13 @@ export function App(): JSX.Element {
           break;
         }
         case 'message_delta': {
+          // Track streaming progress for the active message
+          const now = Date.now();
+          setStreamingId(event.id);
+          setStreamLastDeltaAt(now);
+          setStreamStartedAt((prev) => prev ?? now);
+          setStreamCharCount((prev) => prev + (event.delta?.length || 0));
+
           setMessages((prev) => {
             const idx = prev.findIndex((m) => m.id === event.id);
             if (idx < 0) return prev;
@@ -84,6 +128,13 @@ export function App(): JSX.Element {
           break;
         }
         case 'message_done': {
+          // Reset streaming tracking when this message finishes
+          setStreamingId((sid) => (sid === event.id ? null : sid));
+          if (streamingId === event.id || !streamingId) {
+            setStreamCharCount(0);
+            setStreamStartedAt(undefined);
+            setStreamLastDeltaAt(undefined);
+          }
           setMessages((prev) => {
             const idx = prev.findIndex((m) => m.id === event.id);
             if (idx < 0) return prev;
@@ -123,6 +174,11 @@ export function App(): JSX.Element {
         }
         case 'error': {
           setError(event.message);
+          // Clear streaming on error
+          setStreamingId(null);
+          setStreamCharCount(0);
+          setStreamStartedAt(undefined);
+          setStreamLastDeltaAt(undefined);
           break;
         }
         case 'session': {
@@ -130,6 +186,11 @@ export function App(): JSX.Element {
           break;
         }
         case 'done':
+          // Final cleanup - ensure streaming indicators are off
+          setStreamingId(null);
+          setStreamCharCount(0);
+          setStreamStartedAt(undefined);
+          setStreamLastDeltaAt(undefined);
           break;
       }
     };
@@ -148,7 +209,7 @@ export function App(): JSX.Element {
           exit();
           return;
         }
-        // Ctrl+S — settings (works globally)
+        // Ctrl+S — settings
         if (key.ctrl && inputCh === 's') {
           setModal((m) => (m === 'settings' ? 'none' : 'settings'));
           return;
@@ -164,6 +225,31 @@ export function App(): JSX.Element {
         // Ctrl+N — new session
         if (key.ctrl && inputCh === 'n') {
           handleNewSession();
+          return;
+        }
+        // Ctrl+T — tools
+        if (key.ctrl && inputCh === 't') {
+          setModal((m) => (m === 'tools' ? 'none' : 'tools'));
+          return;
+        }
+        // Ctrl+P — profiles
+        if (key.ctrl && inputCh === 'p') {
+          setModal((m) => (m === 'profiles' ? 'none' : 'profiles'));
+          return;
+        }
+        // Ctrl+M — memory
+        if (key.ctrl && inputCh === 'm') {
+          setModal((m) => (m === 'memory' ? 'none' : 'memory'));
+          return;
+        }
+        // Ctrl+B — budget
+        if (key.ctrl && inputCh === 'b') {
+          setModal((m) => (m === 'budget' ? 'none' : 'budget'));
+          return;
+        }
+        // Ctrl+E — export
+        if (key.ctrl && inputCh === 'e') {
+          setModal((m) => (m === 'export' ? 'none' : 'export'));
           return;
         }
         // Esc when busy → cancel
@@ -188,7 +274,6 @@ export function App(): JSX.Element {
       return;
     }
     if (v === '/help') {
-      // Show help by inserting an assistant-style message.
       const helpMsg: ChatMessage = {
         id: `help_${Date.now()}`,
         role: 'assistant',
@@ -213,6 +298,76 @@ export function App(): JSX.Element {
     }
     if (v === '/settings') {
       setModal('settings');
+      return;
+    }
+    if (v === '/tools') {
+      setModal('tools');
+      return;
+    }
+    if (v === '/profiles') {
+      setModal('profiles');
+      return;
+    }
+    if (v === '/templates') {
+      setModal('templates');
+      return;
+    }
+    if (v === '/memory') {
+      setModal('memory');
+      return;
+    }
+    if (v === '/budget') {
+      setModal('budget');
+      return;
+    }
+    if (v === '/budget reset' || v.startsWith('/budget reset')) {
+      budgetGuard.reset();
+      setBudgetSnapshot(budgetGuard.snapshot());
+      const msg: ChatMessage = {
+        id: `budget_${Date.now()}`,
+        role: 'assistant',
+        content: '✓ Budget counters reset.',
+        createdAt: Date.now(),
+      };
+      setMessages((p) => [...p, msg]);
+      return;
+    }
+    if (v === '/mcp') {
+      setModal('mcp');
+      return;
+    }
+    if (v === '/export') {
+      setModal('export');
+      return;
+    }
+    // /template <name> [vars JSON]
+    if (v.startsWith('/template ')) {
+      const rest = v.slice('/template '.length).trim();
+      const spaceIdx = rest.indexOf(' ');
+      const name = spaceIdx > 0 ? rest.slice(0, spaceIdx) : rest;
+      const varsStr = spaceIdx > 0 ? rest.slice(spaceIdx + 1) : '';
+      let vars: Record<string, string> = {};
+      if (varsStr) {
+        try {
+          vars = JSON.parse(varsStr);
+        } catch {
+          // ignore
+        }
+      }
+      promptTemplates
+        .render(name, vars)
+        .then((rendered) => {
+          void agent.send(rendered);
+        })
+        .catch((e) => {
+          const msg: ChatMessage = {
+            id: `tmpl_${Date.now()}`,
+            role: 'assistant',
+            content: `❌ Template error: ${e?.message || e}`,
+            createdAt: Date.now(),
+          };
+          setMessages((p) => [...p, msg]);
+        });
       return;
     }
 
@@ -247,22 +402,37 @@ export function App(): JSX.Element {
 
   const cwd = process.cwd();
 
+  // Compute header badges
+  const totalToolCount = TOOLS.length + mcpManager.getToolDefinitions().length;
+  const budgetActive = budgetGuard.isActive();
+  const budgetPercent = budgetActive
+    ? Math.max(
+        budgetSnapshot.percentages.usd || 0,
+        budgetSnapshot.percentages.tokens || 0,
+        budgetSnapshot.percentages.toolCalls || 0
+      )
+    : undefined;
+
   return (
     <Box flexDirection="column">
-      {showBanner ? <Banner subtitle="AI coding agent · Ctrl+S settings · Ctrl+L sessions" /> : null}
+      {showBanner ? (
+        <Banner subtitle="AI coding agent · /help for commands · Ctrl+T tools · Ctrl+P profiles" />
+      ) : null}
 
       <Header
         providerName={config.provider.name}
         model={config.provider.model || '(no model)'}
         cwd={cwd}
         sessionTitle={sessionTitle}
+        toolCount={totalToolCount}
+        mcpServers={mcpServerCount}
+        budgetActive={budgetActive}
+        budgetPercent={budgetPercent}
       />
 
       {!config.apiKey ? (
         <Box paddingX={1}>
-          <Text color="yellow">
-            ⚠ {getProviderInfo(config)}
-          </Text>
+          <Text color="yellow">⚠ {getProviderInfo(config)}</Text>
         </Box>
       ) : null}
 
@@ -276,7 +446,7 @@ export function App(): JSX.Element {
         placeholder={
           thinking
             ? 'Working… press Esc to cancel'
-            : 'Type a message or /help…'
+            : 'Type a message or /help for commands…'
         }
       />
 
@@ -284,8 +454,13 @@ export function App(): JSX.Element {
         thinking={thinking}
         pendingTools={pendingTools}
         error={error || undefined}
+        streaming={streamingId !== null}
+        streamCharCount={streamCharCount}
+        streamStartedAt={streamStartedAt}
+        streamLastDeltaAt={streamLastDeltaAt}
       />
 
+      {/* Modal panels */}
       {modal === 'settings' ? (
         <Box flexDirection="column" marginTop={1}>
           <SettingsPanel
@@ -310,25 +485,95 @@ export function App(): JSX.Element {
           />
         </Box>
       ) : null}
+
+      {modal === 'tools' ? (
+        <Box flexDirection="column" marginTop={1}>
+          <ToolsPanel onClose={() => setModal('none')} />
+        </Box>
+      ) : null}
+
+      {modal === 'profiles' ? (
+        <Box flexDirection="column" marginTop={1}>
+          <ProfilesPanel onClose={() => setModal('none')} />
+        </Box>
+      ) : null}
+
+      {modal === 'templates' ? (
+        <Box flexDirection="column" marginTop={1}>
+          <TemplatesPanel
+            onClose={() => setModal('none')}
+            onUse={(cmd) => setInput(cmd)}
+          />
+        </Box>
+      ) : null}
+
+      {modal === 'budget' ? (
+        <Box flexDirection="column" marginTop={1}>
+          <BudgetPanel onClose={() => setModal('none')} />
+        </Box>
+      ) : null}
+
+      {modal === 'memory' ? (
+        <Box flexDirection="column" marginTop={1}>
+          <MemoryPanel onClose={() => setModal('none')} />
+        </Box>
+      ) : null}
+
+      {modal === 'mcp' ? (
+        <Box flexDirection="column" marginTop={1}>
+          <MCPPanel onClose={() => setModal('none')} />
+        </Box>
+      ) : null}
+
+      {modal === 'export' ? (
+        <Box flexDirection="column" marginTop={1}>
+          <ExportPanel
+            messages={messages}
+            sessionTitle={sessionTitle}
+            onClose={() => setModal('none')}
+          />
+        </Box>
+      ) : null}
     </Box>
   );
 }
 
-const HELP_TEXT = `## Commands
+const HELP_TEXT = `## Slash Commands
 
+**Session**
 - \`/help\` — show this help
 - \`/new\` — start a new session
 - \`/sessions\` — open the session list
-- \`/settings\` — open settings
 - \`/clear\` — clear visible messages
 - \`/quit\`, \`/exit\` — quit
+
+**Settings**
+- \`/settings\` — open settings panel
+
+**Browse fitur baru**
+- \`/tools\` — list all 33 native + MCP tools
+- \`/profiles\` — show 7 agent profiles
+- \`/templates\` — browse 8 prompt templates
+- \`/memory\` — browse persistent memory
+- \`/mcp\` — show connected MCP servers
+- \`/budget\` — show budget usage
+- \`/budget reset\` — reset budget counters
+- \`/export\` — export conversation (md/html/json)
+
+**Use a prompt template**
+- \`/template review {"file":"src/foo.ts"}\` — render & send a template
 
 ## Keybinds
 
 - **Enter** — send message
-- **Ctrl+S** — toggle settings panel
-- **Ctrl+L** — toggle session list
-- **Ctrl+N** — start a new session
-- **Esc** — cancel an in-flight request
+- **Ctrl+S** — settings
+- **Ctrl+L** — sessions
+- **Ctrl+N** — new session
+- **Ctrl+T** — tools panel
+- **Ctrl+P** — profiles panel
+- **Ctrl+M** — memory panel
+- **Ctrl+B** — budget panel
+- **Ctrl+E** — export panel
+- **Esc** — cancel in-flight call (or close panel)
 - **Ctrl+C** — quit
 `;

@@ -6,6 +6,143 @@ All notable changes, implementation details, and guides for ZIP CODE.
 
 ## Version History
 
+### [2.7.0] - 2026-05-17
+
+#### Added - TUI Polish & Streaming Visibility
+
+**Streaming indicators** — finally obvious when the agent is actively working vs stalled:
+- New `StreamingIndicator` component with animated spinner, char count, chars/sec, elapsed time
+- Stall detection: warns "⚠ stalled Xs" when no delta arrives for 2+ seconds
+- Spinner switches from fast `⠋⠙⠹⠸` to slow `◐◓◑◒` pulse when stalled (yellow vs cyan)
+- New `StreamingCursor` — blinking `▊` at the end of streaming content, just like a real terminal
+- Active streaming progress shown in StatusBar with character count and rate
+
+**MessageView refinements**:
+- Role icons (👤 You / 🤖 ZIP CODE) for instant scannability
+- Message timestamps (HH:MM)
+- Streaming cursor follows the actual end of generated content
+- Empty state redesigned with example prompts and quick keybind hints
+
+**ToolCallView upgrades**:
+- 30+ specific tool icons (was 7) — git, web, watcher, code analysis, database, multi-agent, memory all branded
+- MCP tools shown as `🔌 server::tool` (prefix stripped for readability)
+- Per-call elapsed time for slow operations (>500ms)
+- Output size badge (e.g. `2.3KB`) on completed calls
+- Box-drawing prefix `│` for output preview blocks
+
+**StatusBar enhancements**:
+- Top row: warnings (yellow ⚠)
+- Middle row: live streaming progress (only when streaming)
+- Bottom row: status badge (ready/thinking/running/streaming/error) + keybind hint
+- Border color shifts: red on error, gradient when busy, gray when idle
+- Profile name shown in ready state when not 'general'
+- Thinking spinner upgraded to `dots12` (smoother)
+
+**InputBar polish**:
+- Mode-aware prefix: `▶` normal, `⚡` slash command (magenta), `⏳` disabled
+- Character counter shown on the right when typing
+- Slash commands get magenta border tint
+
+**Banner** rebranded:
+- Version badge displayed
+- Tagline: "AI Coding Agent · vX.Y.Z · multi-agent · MCP · 33+ tools"
+
+**Empty state**: bullet-list of example prompts plus `Ctrl+T tools · Ctrl+P profiles · /help` hint.
+
+#### Internal
+
+- App.tsx tracks `streamingId`, `streamCharCount`, `streamStartedAt`, `streamLastDeltaAt`
+- Streaming counters reset on `message_done`, `done`, and `error` events to prevent stuck indicators
+- StreamingIndicator self-renders at 12.5Hz (80ms intervals) for smooth animation
+
+#### Stats
+- Files changed: 7 UI components + 1 new (StreamingIndicator)
+- Build: ✅ Pass
+- Tests: ✅ 147/147 Pass
+
+---
+
+### [2.6.0] - 2026-05-17
+
+#### Added - TUI Feature Discovery
+
+7 new in-app panels surfacing every v2.4/v2.5 feature without leaving the terminal:
+
+**🔧 Tools Panel (`Ctrl+T` / `/tools`)**
+- Browse all 33 native tools + dynamic MCP tools
+- Grouped by category: Filesystem, Git, Web, Watcher, Code Analysis, Database, Multi-Agent, Memory, MCP
+- Up/down navigation, scrollable list
+- Shows native vs MCP source counts
+
+**🎭 Profiles Panel (`Ctrl+P` / `/profiles`)**
+- Browse all 7 agent profiles (general, orchestrator, coder, reviewer, debugger, researcher, writer)
+- Per-profile detail: model, temperature, max iterations, allowed/blocked tools
+- System prompt preview
+
+**📝 Templates Panel (`/templates`)**
+- Browse 8 built-in prompt templates plus user/project overrides
+- Per-template detail: source, variables, body preview
+- Enter to use template via `/template <name>` command
+
+**💰 Budget Panel (`Ctrl+B` / `/budget`)**
+- Real-time budget usage display (refreshes every 1s)
+- Visual progress bars (green/yellow/red at 75%/90% thresholds)
+- USD spent, tokens used, tool calls made vs limits
+- Setup instructions when no budget configured
+- `/budget reset` slash command to clear counters
+
+**🧠 Memory Panel (`Ctrl+M` / `/memory`)**
+- Browse persistent memory entries with category breakdown
+- Per-category counts (user/project/tech/preference/fact)
+- Selected entry detail with timestamp
+
+**🔌 MCP Panel (`/mcp`)**
+- Show connected MCP servers with status (🟢/🔴)
+- Per-server tool count
+- Command shown for each connection
+- Setup instructions when no servers configured
+
+**📤 Export Panel (`Ctrl+E` / `/export`)**
+- Export current conversation in 3 formats: Markdown, HTML (dark mode), JSON
+- Toggle: hide tool calls (`t`), hide system messages (`y`)
+- Saves to `~/.zipcode/exports/`
+- Success/error feedback in-panel
+
+#### Enhanced UI
+
+**Header** now shows badges for:
+- 🎭 Active profile (when not 'general')
+- 🔧 Total tool count (native + MCP)
+- 🔌 Connected MCP server count
+- 💰 Budget usage percentage with color coding (green/yellow/red)
+
+**StatusBar** updated hint shows new keybinds:
+- `/help · Ctrl+S settings · Ctrl+T tools · Ctrl+P profiles · Ctrl+M memory · Ctrl+C quit`
+
+**Slash commands** expanded:
+- `/tools`, `/profiles`, `/templates`, `/memory`, `/budget`, `/budget reset`, `/mcp`, `/export`
+- `/template <name> [vars-json]` to render and send a prompt template
+
+**Keybinds** added:
+- `Ctrl+T` — toggle tools panel
+- `Ctrl+P` — toggle profiles panel
+- `Ctrl+M` — toggle memory panel
+- `Ctrl+B` — toggle budget panel
+- `Ctrl+E` — toggle export panel
+
+#### Internal
+
+- New API: `mcpManager.getServerStatus()` returns connection info for UI
+- All panels handle empty states gracefully with setup instructions
+- Live data: budget panel updates 1Hz, MCP/header badges update 0.5Hz
+
+#### Stats
+- Source files: +7 UI panels (~30k chars)
+- Build: ✅ Pass
+- Tests: ✅ 147/147 Pass
+
+---
+
 ### [2.5.0] - 2026-05-17
 
 #### Added - Extensibility & Ecosystem

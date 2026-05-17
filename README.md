@@ -11,7 +11,7 @@
 
 **A modern, Ink-powered Terminal UI agent for coding assistance — with multi-agent architecture, MCP support, and a full extensibility layer.**
 
-[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-147%20passing-brightgreen.svg)]()
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
@@ -101,6 +101,11 @@ docker-compose up
 | `Ctrl+S`  | Settings panel        |
 | `Ctrl+L`  | Session browser       |
 | `Ctrl+N`  | New session           |
+| `Ctrl+T`  | Tools panel           |
+| `Ctrl+P`  | Profiles panel        |
+| `Ctrl+M`  | Memory panel          |
+| `Ctrl+B`  | Budget panel          |
+| `Ctrl+E`  | Export panel          |
 | `Esc`     | Cancel in-flight call |
 | `Ctrl+C`  | Quit                  |
 
@@ -388,15 +393,24 @@ Export a session to Markdown, HTML (self-contained, dark mode), or JSON for shar
 
 Type these in the input bar:
 
-| Command                | Action                              |
-| ---------------------- | ----------------------------------- |
-| `/help`                | Show keybinds and commands          |
-| `/new`                 | Start a new session                 |
-| `/sessions`            | Open the session browser            |
-| `/settings`            | Open the settings panel             |
-| `/clear`               | Clear the visible transcript        |
-| `/quit`, `/exit`       | Quit                                |
-| `/<custom>`            | Any custom command from `.zipcode/commands/` |
+| Command                    | Action                                       |
+| -------------------------- | -------------------------------------------- |
+| `/help`                    | Show keybinds and commands                   |
+| `/new`                     | Start a new session                          |
+| `/sessions`                | Open the session browser                     |
+| `/settings`                | Open the settings panel                      |
+| `/clear`                   | Clear the visible transcript                 |
+| `/quit`, `/exit`           | Quit                                         |
+| `/tools`                   | Browse all native + MCP tools                |
+| `/profiles`                | Browse the 7 agent profiles                  |
+| `/templates`               | Browse prompt templates                      |
+| `/template <name> [vars]`  | Render a template and send                   |
+| `/memory`                  | Browse persistent memory                     |
+| `/mcp`                     | Show connected MCP servers                   |
+| `/budget`                  | Show budget usage                            |
+| `/budget reset`            | Reset budget counters                        |
+| `/export`                  | Export the current conversation              |
+| `/<custom>`                | Any custom command from `.zipcode/commands/` |
 
 ---
 
@@ -496,6 +510,8 @@ Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 See [CHANGELOG.md](CHANGELOG.md) for the full release log.
 
+- **v2.7.0** — TUI polish & streaming visibility: StreamingIndicator with stall detection, blinking cursor, role icons, 30+ tool icons, refined StatusBar/InputBar/Banner
+- **v2.6.0** — TUI feature discovery: 7 new in-app panels (tools, profiles, templates, budget, memory, MCP, export), enhanced header badges, expanded slash commands & keybinds
 - **v2.5.0** — MCP client, hooks, custom slash commands, SQL tools, budget guards, prompt templates, conversation export
 - **v2.4.0** — Multi-agent architecture (sub-agents, profiles, memory, workspace, resilience)
 - **v2.3.0** — Production hardening (logging, telemetry, Docker, docs, tests)
