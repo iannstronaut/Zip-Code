@@ -11,7 +11,7 @@
 
 **A modern, Ink-powered Terminal UI agent for coding assistance — with multi-agent architecture, MCP support, and a full extensibility layer.**
 
-[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-147%20passing-brightgreen.svg)]()
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
@@ -510,6 +510,7 @@ Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 See [CHANGELOG.md](CHANGELOG.md) for the full release log.
 
+- **v2.7.0** — TUI polish & streaming visibility: StreamingIndicator with stall detection, blinking cursor, role icons, 30+ tool icons, refined StatusBar/InputBar/Banner
 - **v2.6.0** — TUI feature discovery: 7 new in-app panels (tools, profiles, templates, budget, memory, MCP, export), enhanced header badges, expanded slash commands & keybinds
 - **v2.5.0** — MCP client, hooks, custom slash commands, SQL tools, budget guards, prompt templates, conversation export
 - **v2.4.0** — Multi-agent architecture (sub-agents, profiles, memory, workspace, resilience)

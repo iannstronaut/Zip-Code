@@ -54,6 +54,11 @@ export function App(): JSX.Element {
   const [showBanner, setShowBanner] = useState(true);
   const [budgetSnapshot, setBudgetSnapshot] = useState(() => budgetGuard.snapshot());
   const [mcpServerCount, setMcpServerCount] = useState(0);
+  // Streaming progress tracking for the current assistant message
+  const [streamingId, setStreamingId] = useState<string | null>(null);
+  const [streamCharCount, setStreamCharCount] = useState(0);
+  const [streamStartedAt, setStreamStartedAt] = useState<number | undefined>(undefined);
+  const [streamLastDeltaAt, setStreamLastDeltaAt] = useState<number | undefined>(undefined);
 
   const agentRef = useRef<Agent | null>(null);
 
@@ -103,6 +108,13 @@ export function App(): JSX.Element {
           break;
         }
         case 'message_delta': {
+          // Track streaming progress for the active message
+          const now = Date.now();
+          setStreamingId(event.id);
+          setStreamLastDeltaAt(now);
+          setStreamStartedAt((prev) => prev ?? now);
+          setStreamCharCount((prev) => prev + (event.delta?.length || 0));
+
           setMessages((prev) => {
             const idx = prev.findIndex((m) => m.id === event.id);
             if (idx < 0) return prev;
@@ -116,6 +128,13 @@ export function App(): JSX.Element {
           break;
         }
         case 'message_done': {
+          // Reset streaming tracking when this message finishes
+          setStreamingId((sid) => (sid === event.id ? null : sid));
+          if (streamingId === event.id || !streamingId) {
+            setStreamCharCount(0);
+            setStreamStartedAt(undefined);
+            setStreamLastDeltaAt(undefined);
+          }
           setMessages((prev) => {
             const idx = prev.findIndex((m) => m.id === event.id);
             if (idx < 0) return prev;
@@ -155,6 +174,11 @@ export function App(): JSX.Element {
         }
         case 'error': {
           setError(event.message);
+          // Clear streaming on error
+          setStreamingId(null);
+          setStreamCharCount(0);
+          setStreamStartedAt(undefined);
+          setStreamLastDeltaAt(undefined);
           break;
         }
         case 'session': {
@@ -162,6 +186,11 @@ export function App(): JSX.Element {
           break;
         }
         case 'done':
+          // Final cleanup - ensure streaming indicators are off
+          setStreamingId(null);
+          setStreamCharCount(0);
+          setStreamStartedAt(undefined);
+          setStreamLastDeltaAt(undefined);
           break;
       }
     };
@@ -425,6 +454,10 @@ export function App(): JSX.Element {
         thinking={thinking}
         pendingTools={pendingTools}
         error={error || undefined}
+        streaming={streamingId !== null}
+        streamCharCount={streamCharCount}
+        streamStartedAt={streamStartedAt}
+        streamLastDeltaAt={streamLastDeltaAt}
       />
 
       {/* Modal panels */}

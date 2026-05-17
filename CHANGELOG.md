@@ -6,6 +6,62 @@ All notable changes, implementation details, and guides for ZIP CODE.
 
 ## Version History
 
+### [2.7.0] - 2026-05-17
+
+#### Added - TUI Polish & Streaming Visibility
+
+**Streaming indicators** — finally obvious when the agent is actively working vs stalled:
+- New `StreamingIndicator` component with animated spinner, char count, chars/sec, elapsed time
+- Stall detection: warns "⚠ stalled Xs" when no delta arrives for 2+ seconds
+- Spinner switches from fast `⠋⠙⠹⠸` to slow `◐◓◑◒` pulse when stalled (yellow vs cyan)
+- New `StreamingCursor` — blinking `▊` at the end of streaming content, just like a real terminal
+- Active streaming progress shown in StatusBar with character count and rate
+
+**MessageView refinements**:
+- Role icons (👤 You / 🤖 ZIP CODE) for instant scannability
+- Message timestamps (HH:MM)
+- Streaming cursor follows the actual end of generated content
+- Empty state redesigned with example prompts and quick keybind hints
+
+**ToolCallView upgrades**:
+- 30+ specific tool icons (was 7) — git, web, watcher, code analysis, database, multi-agent, memory all branded
+- MCP tools shown as `🔌 server::tool` (prefix stripped for readability)
+- Per-call elapsed time for slow operations (>500ms)
+- Output size badge (e.g. `2.3KB`) on completed calls
+- Box-drawing prefix `│` for output preview blocks
+
+**StatusBar enhancements**:
+- Top row: warnings (yellow ⚠)
+- Middle row: live streaming progress (only when streaming)
+- Bottom row: status badge (ready/thinking/running/streaming/error) + keybind hint
+- Border color shifts: red on error, gradient when busy, gray when idle
+- Profile name shown in ready state when not 'general'
+- Thinking spinner upgraded to `dots12` (smoother)
+
+**InputBar polish**:
+- Mode-aware prefix: `▶` normal, `⚡` slash command (magenta), `⏳` disabled
+- Character counter shown on the right when typing
+- Slash commands get magenta border tint
+
+**Banner** rebranded:
+- Version badge displayed
+- Tagline: "AI Coding Agent · vX.Y.Z · multi-agent · MCP · 33+ tools"
+
+**Empty state**: bullet-list of example prompts plus `Ctrl+T tools · Ctrl+P profiles · /help` hint.
+
+#### Internal
+
+- App.tsx tracks `streamingId`, `streamCharCount`, `streamStartedAt`, `streamLastDeltaAt`
+- Streaming counters reset on `message_done`, `done`, and `error` events to prevent stuck indicators
+- StreamingIndicator self-renders at 12.5Hz (80ms intervals) for smooth animation
+
+#### Stats
+- Files changed: 7 UI components + 1 new (StreamingIndicator)
+- Build: ✅ Pass
+- Tests: ✅ 147/147 Pass
+
+---
+
 ### [2.6.0] - 2026-05-17
 
 #### Added - TUI Feature Discovery
