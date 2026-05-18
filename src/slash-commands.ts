@@ -23,7 +23,7 @@ import { readFile, readdir, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, basename, extname } from 'path';
 import { homedir } from 'os';
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 export interface SlashCommand {
   name: string;

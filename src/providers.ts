@@ -1,6 +1,6 @@
 // Provider helpers — fetch model lists, validate connections.
 
-import type { ProviderConfig } from './config';
+import type { ProviderConfig } from './config.js';
 
 export interface ModelInfo {
   id: string;

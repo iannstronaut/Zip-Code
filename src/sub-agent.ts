@@ -2,15 +2,15 @@
 // Allows the main agent to spawn specialized child agents with different
 // models, profiles, and isolated contexts.
 
-import type { ToolDefinition, ToolResult, ChatMessage } from './types';
+import type { ToolDefinition, ToolResult, ChatMessage } from './types.js';
 import {
   AGENT_PROFILES,
   filterToolsForProfile,
   getProfile,
   listProfiles,
   type ProfileName,
-} from './agent-profiles';
-import { logger } from './logger';
+} from './agent-profiles.js';
+import { logger } from './logger.js';
 
 export interface SubAgentTask {
   goal: string;

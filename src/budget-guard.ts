@@ -11,7 +11,7 @@
 //
 // Soft warnings fire at 75% and 90% of each limit.
 
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 export interface BudgetLimits {
   usd?: number;

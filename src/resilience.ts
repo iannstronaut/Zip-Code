@@ -1,6 +1,6 @@
 // Resilience utilities: retry with exponential backoff + circuit breaker
 
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 export interface RetryOptions {
   /** Max number of attempts (including the first). Default 3. */

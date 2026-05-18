@@ -11,10 +11,10 @@
 //   - Result rows are capped at 500 by default to keep them out of the
 //     context window.
 
-import type { ToolDefinition, ToolResult } from './types';
+import type { ToolDefinition, ToolResult } from './types.js';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 export const DATABASE_TOOLS: ToolDefinition[] = [
   {

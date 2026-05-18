@@ -1,6 +1,6 @@
 // Code analysis tools for ZIP CODE
 
-import type { ToolDefinition, ToolResult } from './types';
+import type { ToolDefinition, ToolResult } from './types.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { readFile } from 'fs/promises';

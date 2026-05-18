@@ -6,7 +6,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { createHash } from 'crypto';
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 export interface TelemetryEvent {
   id: string;

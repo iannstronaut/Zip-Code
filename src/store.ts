@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { homedir } from 'os';
-import type { ChatMessage, Message, ProviderRecord, SessionRow } from './types';
+import type { ChatMessage, Message, ProviderRecord, SessionRow } from './types.js';
 
 const DB_DIR = resolve(homedir(), '.zipcode');
 const DB_PATH = resolve(DB_DIR, 'zipcode.db');

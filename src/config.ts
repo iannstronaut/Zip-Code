@@ -3,7 +3,7 @@
 // lives in `app_config.activeProviderId`. Legacy single-row config is migrated
 // on first read.
 
-import type { Config, ProviderRecord } from './types';
+import type { Config, ProviderRecord } from './types.js';
 import {
   getActiveProvider,
   getAllConfig,
@@ -12,7 +12,7 @@ import {
   setActiveProvider,
   setConfigValue,
   upsertProvider,
-} from './store';
+} from './store.js';
 
 export type ProviderType = 'openai' | 'custom';
 

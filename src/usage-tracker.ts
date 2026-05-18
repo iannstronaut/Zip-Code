@@ -1,6 +1,6 @@
 // Token usage tracking and cost estimation
 
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 export interface TokenUsage {
   promptTokens: number;

@@ -1,6 +1,6 @@
 // Tool implementations for ZIP CODE
 
-import type { ToolDefinition, ToolResult } from './types';
+import type { ToolDefinition, ToolResult } from './types.js';
 import { existsSync } from 'fs';
 import {
   readdir,
@@ -12,16 +12,16 @@ import {
 import { join, resolve, dirname, relative, sep } from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { GIT_TOOLS } from './git-tools';
-import { WEB_TOOLS } from './web-tools';
-import { WATCHER_TOOLS } from './watcher-tools';
-import { CODE_ANALYSIS_TOOLS } from './code-analysis-tools';
-import { DELEGATION_TOOLS } from './sub-agent';
-import { MEMORY_TOOLS } from './memory-tools';
-import { DATABASE_TOOLS, sqlQuery, sqlSchema } from './database-tools';
-import { hookManager } from './hooks';
-import { mcpManager } from './mcp-client';
-import { sanitizePath, isDangerousCommand, RateLimiter, ResultCache } from './security';
+import { GIT_TOOLS } from './git-tools.js';
+import { WEB_TOOLS } from './web-tools.js';
+import { WATCHER_TOOLS } from './watcher-tools.js';
+import { CODE_ANALYSIS_TOOLS } from './code-analysis-tools.js';
+import { DELEGATION_TOOLS } from './sub-agent.js';
+import { MEMORY_TOOLS } from './memory-tools.js';
+import { DATABASE_TOOLS, sqlQuery, sqlSchema } from './database-tools.js';
+import { hookManager } from './hooks.js';
+import { mcpManager } from './mcp-client.js';
+import { sanitizePath, isDangerousCommand, RateLimiter, ResultCache } from './security.js';
 
 const execAsync = promisify(exec);
 

@@ -1,6 +1,6 @@
 // File watcher and monitoring tools for ZIP CODE
 
-import type { ToolDefinition, ToolResult } from './types';
+import type { ToolDefinition, ToolResult } from './types.js';
 import { watch } from 'fs';
 import { resolve } from 'path';
 
